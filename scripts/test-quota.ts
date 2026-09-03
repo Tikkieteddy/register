@@ -57,10 +57,11 @@ async function main() {
     .select()
     .from(eventSessions)
     .where(eq(eventSessions.id, session.id));
-  const [{ holdRows }] = await db
+  const holdRowsResult = await db
     .select({ holdRows: sql<number>`count(*)::int` })
     .from(seatHolds)
     .where(eq(seatHolds.sessionId, session.id));
+  const holdRows = holdRowsResult[0]?.holdRows;
 
   check("จองสำเร็จ", granted, QUOTA);
   check("ถูกปฏิเสธ", rejected, CONCURRENT - QUOTA);

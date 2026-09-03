@@ -64,3 +64,6 @@ desktop.ini
 
 # ฐานข้อมูลทดสอบในเครื่อง (ไม่ commit)
 .env.local
+
+# ผลลัพธ์การทดสอบ
+tests/*.png

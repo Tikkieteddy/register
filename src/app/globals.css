@@ -4,8 +4,12 @@
    Design Token — ข้อกำหนดด้านการออกแบบ
    ห้าม hard-code ค่าสีกระจายทั่วโค้ด ให้เรียกใช้ผ่านตัวแปรเสมอ
    เพื่อให้เปลี่ยนธีมได้จากที่เดียว
+
+   ประกาศใน @theme ของ Tailwind v4 ซึ่งจะสร้างให้ทั้ง 2 อย่างพร้อมกัน:
+   ① ตัวแปร CSS ที่เรียกใช้ได้ทั่วไป เช่น var(--color-primary)
+   ② utility class ของ Tailwind เช่น bg-primary, text-ink, border-line
    ========================================================================== */
-:root {
+@theme {
   /* --- สี CI หลัก --- */
   --color-primary: #ec5f27;
   --color-primary-dark: #c94a18;   /* สำหรับ hover / active */
@@ -27,48 +31,27 @@
   --color-success-bg: #e7f3ec;
   --color-warning: #9a6b08;
   --color-warning-bg: #fdf3de;
-  /* โทนแดงมาตรฐานสำหรับ error — ตั้งใจไม่ให้ปนกับสีส้ม CI */
+  /* โทนแดงมาตรฐานสำหรับ error — ตั้งใจแยกไม่ให้ปนกับสีส้ม CI */
   --color-danger: #d32f2f;
-  --color-danger-bg: #fceaea;
+  --color-danger-bg: #fdeded;
+  --color-danger-border: #f0b4b4;
 
   /* --- ตัวอักษร --- */
   --font-display: var(--font-plex-thai), "Noto Sans Thai", system-ui, sans-serif;
   --font-body: var(--font-sarabun), "Noto Sans Thai", system-ui, sans-serif;
 
   /* --- รูปทรง --- */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-pill: 999px;   /* ปุ่มทรงแคปซูลตามภาพอ้างอิง */
-  --control-height: 48px; /* ปุ่มและ input สูงพอกดง่ายบนมือถือ */
+  --radius-card: 12px;
+  --radius-control: 8px;
+  --radius-pill: 999px;  /* ปุ่มทรงแคปซูลตามภาพอ้างอิง */
 }
 
-/* ให้ Tailwind รู้จัก token ข้างบน เรียกใช้ได้เป็น bg-primary, text-ink ฯลฯ */
-@theme inline {
-  --color-primary: var(--color-primary);
-  --color-primary-dark: var(--color-primary-dark);
-  --color-primary-light: var(--color-primary-light);
-  --color-primary-contrast: var(--color-primary-contrast);
-  --color-bg: var(--color-bg);
-  --color-surface: var(--color-surface);
-  --color-surface-2: var(--color-surface-2);
-  --color-ink: var(--color-ink);
-  --color-ink-2: var(--color-ink-2);
-  --color-muted: var(--color-muted);
-  --color-line: var(--color-line);
-  --color-success: var(--color-success);
-  --color-warning: var(--color-warning);
-  --color-danger: var(--color-danger);
-  --font-display: var(--font-display);
-  --font-body: var(--font-body);
-}
-
-* {
-  box-sizing: border-box;
+/* ความสูงขั้นต่ำของปุ่มและช่องกรอก ให้กดง่ายด้วยนิ้วโป้งบนมือถือ */
+:root {
+  --control-height: 48px;
 }
 
 body {
-  margin: 0;
   background: var(--color-bg);
   color: var(--color-ink);
   font-family: var(--font-body);
@@ -83,10 +66,10 @@ h1, h2, h3, h4 {
 }
 
 /* โฟกัสต้องมองเห็นได้เสมอ — จำเป็นต่อเกณฑ์ Accessibility WCAG AA */
-:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
-  border-radius: var(--radius-sm);
+  border-radius: 4px;
 }
 
 @media (prefers-reduced-motion: reduce) {
