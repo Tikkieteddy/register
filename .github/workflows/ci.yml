@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+# ยกเลิกงานเก่าที่ยังค้างอยู่เมื่อมี push ใหม่บน branch เดิม
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: ตรวจสอบโค้ด
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: ติดตั้ง dependencies
+        run: npm ci
+
+      - name: ตรวจชนิดข้อมูล (TypeScript)
+        run: npm run typecheck
+
+      - name: ตรวจคุณภาพโค้ด (ESLint)
+        run: npm run lint
+
+      - name: ตรวจช่องโหว่ความปลอดภัยของ dependencies
+        run: npm audit --audit-level=moderate
+
+      - name: Build
+        # ค่าเหล่านี้เป็นค่าหลอกสำหรับ build ตอน CI เท่านั้น ไม่ได้ต่อฐานข้อมูลจริง
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+        run: npm run build
