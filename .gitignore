@@ -61,3 +61,6 @@ desktop.ini
 .vscode/*
 !.vscode/extensions.json
 *.swp
+
+# ฐานข้อมูลทดสอบในเครื่อง (ไม่ commit)
+.env.local
