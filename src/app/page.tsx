@@ -65,7 +65,8 @@ export default function Home() {
         }}
       >
         <h2 style={{ fontSize: "1.05rem", margin: "0 0 0.85rem" }}>สิ่งที่วางไว้แล้วในเฟสนี้</h2>
-        <ul style={{ margin: 0, paddingLeft: "1.25rem", color: "var(--color-ink-2)" }}>
+        {/* ระบุ listStyle ตรง ๆ เพราะ preflight ของ Tailwind v4 รีเซ็ต bullet ของ ul ทิ้ง */}
+        <ul style={{ margin: 0, paddingLeft: "1.25rem", listStyle: "disc", color: "var(--color-ink-2)" }}>
           {foundations.map((item) => (
             <li key={item}>{item}</li>
           ))}
