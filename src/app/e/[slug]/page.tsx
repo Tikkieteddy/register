@@ -15,7 +15,13 @@ import { getDictionary, isLocale, t, type Locale } from "@/i18n/dictionaries";
 
 type Props = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ lang?: string }>;
+  searchParams: Promise<{
+    lang?: string;
+    ref?: string;
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+  }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -38,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function EventLandingPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const { lang } = await searchParams;
+  const { lang, ref, utm_source, utm_medium, utm_campaign } = await searchParams;
   const locale: Locale = lang && isLocale(lang) ? lang : "th";
   const dict = getDictionary(locale);
 
@@ -50,6 +56,20 @@ export default async function EventLandingPage({ params, searchParams }: Props) 
   const description =
     locale === "en" && event.descriptionEn ? event.descriptionEn : event.descriptionTh;
   const shareUrl = `${clientEnv.NEXT_PUBLIC_SITE_URL}/e/${slug}`;
+
+  /**
+   * ⚠️ ต้องส่งพารามิเตอร์ติดตามผลต่อไปหน้าฟอร์มด้วย
+   *    ไม่งั้นจะวัดไม่ได้ว่าคนที่ลงทะเบียนสำเร็จมาจากลิงก์ไหน
+   *    ซึ่งเป็นข้อมูลที่เก็บย้อนหลังไม่ได้ (หัวข้อ 8.5)
+   */
+  const registerParams = new URLSearchParams();
+  if (locale === "en") registerParams.set("lang", "en");
+  if (ref) registerParams.set("ref", ref);
+  if (utm_source) registerParams.set("utm_source", utm_source);
+  if (utm_medium) registerParams.set("utm_medium", utm_medium);
+  if (utm_campaign) registerParams.set("utm_campaign", utm_campaign);
+  const registerQuery = registerParams.toString();
+  const registerHref = `/e/${slug}/register${registerQuery ? `?${registerQuery}` : ""}`;
 
   const canRegister = registrationState === "open";
   const almostFull = canRegister && totalRemaining <= Math.max(event.seatHoldMinutes, 10);
@@ -125,7 +145,7 @@ export default async function EventLandingPage({ params, searchParams }: Props) 
         >
           {canRegister ? (
             <Link
-              href={`/e/${slug}/register${locale === "en" ? "?lang=en" : ""}`}
+              href={registerHref}
               className="inline-flex items-center justify-center min-h-[var(--control-height)] px-8
                 rounded-[var(--radius-pill)] bg-primary text-primary-contrast font-semibold
                 font-[family-name:var(--font-display)] hover:bg-primary-dark transition-colors w-full sm:w-auto"

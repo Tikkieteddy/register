@@ -13,14 +13,20 @@ import { getDictionary, isLocale, type Locale } from "@/i18n/dictionaries";
 
 type Props = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ lang?: string; ref?: string }>;
+  searchParams: Promise<{
+    lang?: string;
+    ref?: string;
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+  }>;
 };
 
 export const metadata: Metadata = { title: "ลงทะเบียน" };
 
 export default async function RegisterPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const { lang, ref } = await searchParams;
+  const { lang, ref, utm_source, utm_medium, utm_campaign } = await searchParams;
   const locale: Locale = lang && isLocale(lang) ? lang : "th";
   const dict = getDictionary(locale);
 
@@ -88,6 +94,8 @@ export default async function RegisterPage({ params, searchParams }: Props) {
           dict={dict}
           locale={locale}
           privacyHref="/privacy"
+          shareLinkCode={ref ?? ""}
+          utm={{ source: utm_source, medium: utm_medium, campaign: utm_campaign }}
         />
       </main>
     </div>

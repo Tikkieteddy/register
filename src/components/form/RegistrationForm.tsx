@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import {
   holdSeatAction,
   releaseSeatAction,
   verifyHoldsAction,
 } from "@/app/actions/registration";
+import { submitRegistrationAction } from "@/app/actions/submit";
 import { Card, CardBody, CardTitle } from "@/components/ui/Card";
 import type { QuestionView, SessionView } from "@/db/queries";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -81,6 +83,8 @@ export function RegistrationForm({
   dict,
   locale,
   privacyHref,
+  shareLinkCode = "",
+  utm,
 }: {
   eventSlug: string;
   sessions: SessionView[];
@@ -88,7 +92,12 @@ export function RegistrationForm({
   dict: Dictionary;
   locale: "th" | "en";
   privacyHref: string;
+  /** รหัสลิงก์ติดตามผลที่พาผู้ใช้มา — ใช้คำนวณอัตราแปลงรายลิงก์ (หัวข้อ 8.5) */
+  shareLinkCode?: string;
+  /** ค่า UTM จาก URL — เก็บไว้เผื่อผู้ใช้มาจากช่องทางที่ไม่ได้ใช้ลิงก์สั้นของเรา */
+  utm?: { source?: string; medium?: string; campaign?: string };
 }) {
+  const router = useRouter();
   /**
    * กู้ข้อมูลที่กรอกค้างไว้ — ใช้ useSyncExternalStore แทนการ setState ใน effect
    *
@@ -325,14 +334,65 @@ export function RegistrationForm({
       const verified = await verifyHoldsAction(tokens);
       if (!verified.ok) {
         handleExpire();
-        setSubmitting(false);
         return;
       }
 
-      // TODO(เฟส 3): บันทึกลงฐานข้อมูล สร้าง QR แล้วพาไปหน้า "เสร็จสิ้น"
-      setBanner(
-        "ตรวจสอบข้อมูลผ่านครบทุกข้อและที่นั่งถูกจองไว้แล้ว — การบันทึกและออกตั๋วจะทำในเฟส 3",
-      );
+      const result = await submitRegistrationAction({
+        eventSlug,
+        holdTokens: tokens,
+        firstName: draft.firstName,
+        lastName: draft.lastName,
+        email: draft.email,
+        phone: draft.phone,
+        phoneCountryCode: draft.phoneCountryCode,
+        sessionIds: selectedSessions,
+        answers: questions.map((q) => {
+          const a = draft.answers[q.id];
+          return {
+            questionId: q.id,
+            optionIds: a?.optionIds ?? [],
+            otherText: a?.otherText || undefined,
+          };
+        }),
+        consentPhoto: draft.consentPhoto,
+        consentPdpa: draft.consentPdpa === true,
+        consentTerms: acceptedTerms,
+        saveForNextTime: draft.saveForNextTime,
+        website,
+        locale,
+        shareLinkCode: shareLinkCode || undefined,
+        utmSource: utm?.source,
+        utmMedium: utm?.medium,
+        utmCampaign: utm?.campaign,
+      });
+
+      if (!result.ok) {
+        if ("holdsExpired" in result) {
+          handleExpire();
+          setBanner(result.message);
+          return;
+        }
+        setErrors(result.fieldErrors);
+        if (result.message) setBanner(result.message);
+
+        const firstKey = Object.keys(result.fieldErrors)[0];
+        if (firstKey) {
+          const el = formRef.current?.querySelector<HTMLElement>(`[data-field="${firstKey}"]`);
+          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+          el?.querySelector<HTMLElement>("input, select, textarea")?.focus();
+        }
+        return;
+      }
+
+      // ลงทะเบียนสำเร็จ — ล้างข้อมูลที่กรอกค้างไว้ แล้วพาไปหน้าเสร็จสิ้น
+      try {
+        sessionStorage.removeItem(DRAFT_KEY);
+      } catch {
+        // เขียนไม่ได้ก็ไม่เป็นไร ข้อมูลจะหายเองเมื่อปิดแท็บ
+      }
+      router.push(`/ticket/${result.ticketToken}?justRegistered=1`);
+    } catch {
+      setBanner("เชื่อมต่อไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setSubmitting(false);
     }
