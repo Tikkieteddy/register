@@ -14,10 +14,17 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/db/seed.ts",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "user:password": "tsx scripts/set-password.ts",
+    "test:e2e": "node tests/e2e-register-flow.mjs && node tests/e2e-full-flow.mjs && node tests/e2e-staff-flow.mjs && node tests/e2e-offline-sync.mjs"
   },
   "dependencies": {
+    "@zxing/browser": "^0.2.1",
+    "@zxing/library": "^0.23.0",
+    "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.2",
+    "idb": "^8.0.3",
+    "jose": "^6.2.10",
     "nanoid": "^6.0.1",
     "next": "^15.5.25",
     "postgres": "^3.4.9",

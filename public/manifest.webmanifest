@@ -1,0 +1,16 @@
+{
+  "name": "ระบบลงทะเบียนหน้างาน",
+  "short_name": "เช็คอิน",
+  "description": "สแกน QR Code เช็คอินผู้เข้าร่วมงาน ทำงานได้แม้เน็ตหลุด",
+  "lang": "th",
+  "dir": "ltr",
+  "start_url": "/staff",
+  "scope": "/staff",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FCFAF7",
+  "theme_color": "#EC5F27",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
