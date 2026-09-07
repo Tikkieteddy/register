@@ -84,9 +84,16 @@ async function seed() {
       venueAddress: "[รอที่อยู่เต็ม]",
       startsAt: new Date("2026-12-01T02:00:00Z"), // 09:00 น. เวลาไทย
       endsAt: new Date("2026-12-01T09:30:00Z"), // 16:30 น. เวลาไทย
-      registrationOpensAt: new Date("2026-10-01T00:00:00Z"),
+      /**
+       * ช่วงเปิดรับลงทะเบียนนับจากวันที่รัน seed
+       *
+       * ตั้งใจไม่ใช้วันที่ตายตัว เพราะถ้าวันที่ผ่านไปแล้ว หน้าลงทะเบียนจะขึ้นว่า
+       * "ยังไม่เปิดรับ" ทำให้ทดสอบระบบไม่ได้เลยทั้งที่โค้ดถูกต้อง
+       */
+      registrationOpensAt: new Date(Date.now() - 7 * 86_400_000),
       registrationClosesAt: new Date("2026-11-25T17:00:00Z"),
-      status: "draft",
+      // เผยแพร่เลยเพื่อให้ทดสอบหน้าลงทะเบียนได้ทันทีหลัง seed
+      status: "published",
       organizerName: "TNN",
     })
     .returning();
@@ -209,9 +216,16 @@ async function seed() {
   console.log(`   ✓ สร้างลิงก์ติดตามผล ${SHARE_LINKS.length} ช่องทาง`);
 
   // ---------- บัญชีผู้ใช้ตัวอย่าง ----------
-  // ⚠️ passwordHash เป็นค่าว่างไว้ก่อน — ระบบล็อกอินจริงจะทำในเฟส 4
-  //    ตอนนั้นจะสร้างสคริปต์ตั้งรหัสผ่านที่แฮชด้วย argon2 ให้
-  await db.insert(users).values([
+  /**
+   * ⚠️ passwordHash เป็นค่าว่าง = ล็อกอินไม่ได้จนกว่าจะตั้งรหัสผ่าน
+   *    ตั้งด้วย: npm run user:password -- admin@example.com <รหัสผ่าน>
+   *
+   * ใช้ onConflictDoNothing เพื่อให้รัน seed ซ้ำได้โดยไม่ล้ม
+   * และที่สำคัญกว่านั้นคือไม่ไปทับรหัสผ่านของบัญชีที่ตั้งไว้แล้วให้กลายเป็นค่าว่าง
+   */
+  await db
+    .insert(users)
+    .values([
     {
       email: "admin@example.com",
       passwordHash: "",
@@ -226,7 +240,8 @@ async function seed() {
       role: "staff",
       canScan: true,
     },
-  ]);
+    ])
+    .onConflictDoNothing();
   console.log("   ✓ สร้างบัญชีตัวอย่าง admin@example.com และ staff@example.com");
 
   console.log("\n✅ ใส่ข้อมูลตัวอย่างเรียบร้อย");

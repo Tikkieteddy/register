@@ -13,6 +13,16 @@ const serverSchema = z.object({
 
   RECAPTCHA_SECRET_KEY: z.string().min(1).optional(),
 
+  /**
+   * ที่เก็บไฟล์ภาพ (Cloudflare R2)
+   * ต้องครบทั้ง 5 ตัวจึงจะใช้งานได้ ถ้าไม่ครบตอนพัฒนาจะเขียนลง public/uploads แทน
+   */
+  R2_ACCOUNT_ID: z.string().min(1).optional(),
+  R2_BUCKET: z.string().min(1).optional(),
+  R2_ACCESS_KEY_ID: z.string().min(1).optional(),
+  R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  R2_PUBLIC_BASE_URL: z.string().url().optional(),
+
   /** ใช้แฮช IP และ visitor id — ห้ามเก็บ IP ดิบตามข้อกำหนด PDPA */
   HASH_SALT: z.string().min(16, "HASH_SALT ต้องยาวอย่างน้อย 16 ตัวอักษร").optional(),
 

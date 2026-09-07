@@ -10,10 +10,9 @@
  * ครอบคลุม: กันเข้าถึงโดยไม่ล็อกอิน, ล็อกอินผิด/ถูก, ตัวนับเช็คอิน,
  * ค้นหาและเช็คอิน, สแกนซ้ำขึ้นจอเหลือง, ลงทะเบียนหน้างาน, และบัตรห้อยคอ
  */
-import { chromium } from "playwright";
+import { launchBrowser } from "./browser.mjs";
 
-const executablePath = process.env.CHROMIUM_PATH ?? undefined;
-const b = await chromium.launch(executablePath ? { executablePath } : {});
+const b = await launchBrowser();
 const ctx = await b.newContext({ viewport: { width: 430, height: 930 }, deviceScaleFactor: 2 });
 const p = await ctx.newPage();
 const errs = [];
@@ -26,6 +25,9 @@ const BASE = "http://localhost:3100";
 // ---------- ① เข้าหน้าเจ้าหน้าที่โดยไม่ล็อกอิน ต้องถูกเด้ง ----------
 await p.goto(`${BASE}/staff`, { waitUntil: "domcontentloaded" });
 await p.getByRole("heading", { name: "เข้าสู่ระบบเจ้าหน้าที่" }).waitFor({ timeout: 20000 });
+// รอให้ React ผูก event handler เสร็จก่อนพิมพ์
+// ถ้าพิมพ์เร็วเกินไป ค่าที่กรอกจะถูกล้างตอน hydrate แล้วฟอร์มจะส่งค่าว่าง
+await p.waitForTimeout(1500);
 log(p.url().includes("/staff/login"), "เข้าหน้าเจ้าหน้าที่โดยไม่ล็อกอิน ถูกเด้งไปหน้าล็อกอิน");
 
 // ---------- ② ล็อกอินด้วยรหัสผิด ----------
@@ -81,6 +83,8 @@ if (hitCount > 0) {
 // ---------- ⑦ ลงทะเบียนหน้างาน ----------
 await p.goto(`${BASE}/staff/walkin`, { waitUntil: "domcontentloaded" });
 await p.getByLabel(/^ชื่อ/).first().waitFor({ timeout: 15000 });
+// รอ hydrate ก่อนพิมพ์ ไม่งั้นค่าที่กรอกจะถูกล้าง
+await p.waitForTimeout(1500);
 await p.getByLabel(/^ชื่อ/).first().fill("วอล์ค");
 await p.getByLabel(/^นามสกุล/).first().fill("อิน");
 await p.getByLabel(/^เบอร์โทรศัพท์/).fill("0899999999");
@@ -91,7 +95,10 @@ const n = await cbs.count();
 await cbs.nth(n - 2).check();
 await cbs.nth(n - 1).check();
 await p.getByRole("button", { name: "บันทึกและเช็คอิน" }).click();
-await p.getByText("ลงทะเบียนและเช็คอินแล้ว").waitFor({ timeout: 15000 });
+await p.getByText("ลงทะเบียนและเช็คอินแล้ว").waitFor({ timeout: 20000 }).catch(async () => {
+  await p.screenshot({ path: "/tmp/walkin-fail.png", fullPage: true });
+  throw new Error("ลงทะเบียนหน้างานไม่สำเร็จ — ดูภาพที่ /tmp/walkin-fail.png");
+});
 log(true, "ลงทะเบียนหน้างานสำเร็จและเช็คอินให้ทันที");
 
 console.log(`\n  pageerror: ${errs.length}`);

@@ -67,3 +67,6 @@ desktop.ini
 
 # ผลลัพธ์การทดสอบ
 tests/*.png
+
+# ไฟล์ภาพที่อัปโหลดตอนพัฒนา — ห้ามขึ้น Git
+/public/uploads/

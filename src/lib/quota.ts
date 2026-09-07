@@ -188,3 +188,38 @@ export async function releaseAllExpiredHolds(db: Db): Promise<number> {
 
   return total;
 }
+
+/**
+ * ปรับตัวนับที่นั่งจากหลังบ้าน — ใช้ตอน Admin ยกเลิกการลงทะเบียนหรือย้ายช่วงเวลา
+ *
+ * ⚠️ ต้องเรียกภายใน transaction ที่กำลังทำงานอยู่เท่านั้น และต้องล็อกแถวก่อนเสมอ
+ *    เหมือนกับ holdSeat ไม่งั้นการยกเลิกที่เกิดพร้อมกับการลงทะเบียนใหม่
+ *    จะทำให้ตัวนับเพี้ยน
+ *
+ * delta เป็นลบ = คืนที่นั่ง · เป็นบวก = ตัดที่นั่งเพิ่ม
+ * คืนค่า false เมื่อขอตัดที่นั่งเพิ่มแล้วที่นั่งไม่พอ
+ */
+export async function adjustReservedCount(
+  tx: Parameters<Parameters<Db["transaction"]>[0]>[0],
+  sessionId: string,
+  delta: number,
+  options: { allowOverQuota?: boolean } = {},
+): Promise<boolean> {
+  const [locked] = await tx
+    .select()
+    .from(eventSessions)
+    .where(eq(eventSessions.id, sessionId))
+    .for("update");
+
+  if (!locked) return false;
+
+  const next = locked.reservedCount + delta;
+  if (delta > 0 && !options.allowOverQuota && next > locked.quota) return false;
+
+  await tx
+    .update(eventSessions)
+    .set({ reservedCount: Math.max(next, 0), updatedAt: new Date() })
+    .where(eq(eventSessions.id, sessionId));
+
+  return true;
+}

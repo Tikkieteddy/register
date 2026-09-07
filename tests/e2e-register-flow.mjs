@@ -7,9 +7,9 @@
  * ครอบคลุม: หน้า Landing, ที่นั่งคงเหลือ, ปุ่มที่ถูกปิด, นาฬิกาจองที่นั่ง,
  * การ validate ภาษาไทย, และเงื่อนไข "เลือกได้ไม่เกิน 3 รายการ"
  */
-import { chromium } from "playwright";
+import { launchBrowser } from "./browser.mjs";
 
-const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" });
+const b = await launchBrowser();
 const ctx = await b.newContext({ viewport: { width: 1280, height: 1000 }, deviceScaleFactor: 2 });
 const p = await ctx.newPage();
 const errors = [];

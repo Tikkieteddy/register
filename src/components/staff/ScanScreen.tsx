@@ -22,7 +22,7 @@ import {
   saveAttendees,
 } from "@/lib/offline/db";
 import { playFeedback, primeAudio } from "@/lib/offline/feedback";
-import { enqueueCheckIn } from "@/lib/offline/queue-store";
+import { enqueueCheckIn, reportServerReachable } from "@/lib/offline/queue-store";
 
 /**
  * หน้าสแกน QR ของเจ้าหน้าที่ ตามข้อกำหนด B1
@@ -60,8 +60,15 @@ export function ScanScreen({
   // อัปเดตตัวนับผู้เช็คอินแบบสด ตามข้อกำหนด B1
   const refreshStats = useCallback(async () => {
     if (!navigator.onLine) return;
-    const next = await getCheckInStatsAction(eventSlug);
-    if (next) setStats(next);
+    try {
+      const next = await getCheckInStatsAction(eventSlug);
+      if (next) setStats(next);
+      reportServerReachable(true);
+    } catch {
+      reportServerReachable(false);
+      // เน็ตสะดุดชั่วคราว — คงตัวเลขเดิมไว้แล้วลองใหม่รอบหน้า
+      // ห้ามปล่อยให้ error ลอยขึ้นไป เพราะรอบนี้ทำงานทุก 15 วินาที
+    }
   }, [eventSlug]);
 
   useEffect(() => {
@@ -82,21 +89,33 @@ export function ScanScreen({
       primeAudio();
 
       try {
+        /**
+         * ⚠️ ห้ามเชื่อ navigator.onLine อย่างเดียว
+         *    เน็ตในงานมักเป็นแบบ "ต่อ Wi-Fi ติด แต่ออกอินเทอร์เน็ตไม่ได้"
+         *    ซึ่งเบราว์เซอร์ยังรายงานว่าออนไลน์ ถ้าไม่ดักไว้ การสแกนจะล้มเงียบ ๆ
+         *    และการเช็คอินของคนนั้นจะหายไปทั้งรายการ
+         */
         if (navigator.onLine) {
-          const outcome = await checkInByTokenAction({ qrToken: token, deviceId: getDeviceId() });
-          setResult(outcome);
-          playFeedback(
-            outcome.status === "success"
-              ? "success"
-              : outcome.status === "duplicate"
-                ? "duplicate"
-                : "invalid",
-          );
-          if (outcome.status === "success") {
-            await markCheckedInLocally(token);
-            void refreshStats();
+          try {
+            const outcome = await checkInByTokenAction({ qrToken: token, deviceId: getDeviceId() });
+            setResult(outcome);
+            playFeedback(
+              outcome.status === "success"
+                ? "success"
+                : outcome.status === "duplicate"
+                  ? "duplicate"
+                  : "invalid",
+            );
+            if (outcome.status === "success") {
+              await markCheckedInLocally(token);
+              void refreshStats();
+            }
+            reportServerReachable(true);
+            return;
+          } catch {
+            // ส่งไม่ถึงเซิร์ฟเวอร์ — ตกไปใช้เส้นทางออฟไลน์ด้านล่างแทน
+            reportServerReachable(false);
           }
-          return;
         }
 
         // ---------- โหมดออฟไลน์ ----------
@@ -179,7 +198,8 @@ export function ScanScreen({
 
     setPrinting({ qrToken: token, format });
     if (navigator.onLine) {
-      void recordBadgePrintAction({ qrToken: token, format, isReprint });
+      // บันทึกประวัติการพิมพ์เป็นข้อมูลประกอบ ถ้าส่งไม่สำเร็จก็ต้องพิมพ์บัตรได้อยู่ดี
+      void recordBadgePrintAction({ qrToken: token, format, isReprint }).catch(() => {});
     }
     window.open(`/staff/badge/${token}?format=${format}&autoprint=1`, "_blank", "noopener");
   }

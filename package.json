@@ -16,7 +16,9 @@
     "db:seed": "tsx src/db/seed.ts",
     "lint:fix": "eslint . --fix",
     "user:password": "tsx scripts/set-password.ts",
-    "test:e2e": "node tests/e2e-register-flow.mjs && node tests/e2e-full-flow.mjs && node tests/e2e-staff-flow.mjs && node tests/e2e-offline-sync.mjs"
+    "test:e2e": "node tests/e2e-register-flow.mjs && node tests/e2e-full-flow.mjs && node tests/e2e-staff-flow.mjs && node tests/e2e-offline-sync.mjs && node tests/e2e-admin-flow.mjs && node tests/e2e-admin-media.mjs",
+    "db:demo": "tsx scripts/demo-data.ts",
+    "db:reset-demo": "tsx scripts/reset-demo.ts"
   },
   "dependencies": {
     "@zxing/browser": "^0.2.1",
@@ -32,6 +34,7 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "resend": "^6.26.0",
+    "sharp": "^0.35.4",
     "zod": "^4.5.4"
   },
   "devDependencies": {
@@ -43,7 +46,7 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.4",
-    "playwright": "^1.49.1",
+    "playwright": "^1.63.0",
     "postcss": "^8.5.27",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.13",

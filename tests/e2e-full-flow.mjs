@@ -7,8 +7,8 @@
  * ครอบคลุม: ลิงก์สั้น /r/[code], การกรอกฟอร์มครบทุกช่อง, การจองที่นั่ง 2 ช่วง,
  * การบันทึกลงฐานข้อมูล, หน้าเสร็จสิ้น, QR Code และหน้าตั๋วสำหรับพิมพ์
  */
-import { chromium } from "playwright";
-const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" });
+import { launchBrowser } from "./browser.mjs";
+const b = await launchBrowser();
 const ctx = await b.newContext({ viewport: { width: 1280, height: 1000 }, deviceScaleFactor: 2 });
 const p = await ctx.newPage();
 const errs = [];

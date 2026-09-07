@@ -14,7 +14,7 @@ import { ScanResult } from "./ScanResult";
 import { ConnectionBar, useOnlineSync } from "./useOnlineSync";
 import { getDeviceId, markCheckedInLocally, searchAttendees } from "@/lib/offline/db";
 import { playFeedback, primeAudio } from "@/lib/offline/feedback";
-import { enqueueCheckIn } from "@/lib/offline/queue-store";
+import { enqueueCheckIn, reportServerReachable } from "@/lib/offline/queue-store";
 
 /**
  * ค้นหาผู้ลงทะเบียนด้วยชื่อ / เบอร์โทร / อีเมล / รหัส
@@ -28,38 +28,59 @@ export function SearchScreen({ eventSlug, staffName }: { eventSlug: string; staf
   const [keyword, setKeyword] = useState("");
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [searching, setSearching] = useState(false);
+  /** true = ผลลัพธ์มาจากรายชื่อที่ดาวน์โหลดไว้ ไม่ใช่จากเซิร์ฟเวอร์ */
+  const [usedLocalData, setUsedLocalData] = useState(false);
   const [result, setResult] = useState<CheckInResult | null>(null);
 
+  /** ค้นจากรายชื่อที่ดาวน์โหลดไว้ในเครื่อง */
+  const searchLocal = useCallback(async (q: string): Promise<SearchHit[]> => {
+    const local = await searchAttendees(q);
+    return local.map((a) => ({
+      qrToken: a.qrToken,
+      firstName: a.firstName,
+      lastName: a.lastName,
+      registrationCode: a.registrationCode,
+      phoneMasked: a.phoneMasked,
+      sessionNames: a.sessionNames,
+      checkedIn: a.checkedIn,
+      checkedInAt: null,
+    }));
+  }, []);
+
+  /**
+   * ⚠️ ห้ามเชื่อ navigator.onLine อย่างเดียว
+   *    เน็ตในงานอีเวนต์มักเป็นแบบ "ต่อ Wi-Fi ติด แต่ออกอินเทอร์เน็ตไม่ได้"
+   *    ซึ่งเบราว์เซอร์ยังรายงานว่าออนไลน์อยู่ ถ้าไม่ดักไว้ การค้นหาจะล้มเงียบ ๆ
+   *    แล้วขึ้นว่า "ไม่พบผู้ลงทะเบียน" ทั้งที่คนคนนั้นลงทะเบียนไว้แล้ว
+   *    ซึ่งเป็นความผิดพลาดที่ร้ายแรงที่สุดของจุดลงทะเบียนหน้างาน
+   */
   const runSearch = useCallback(
     async (q: string) => {
       if (q.trim().length < 2) {
         setHits([]);
+        setUsedLocalData(false);
         return;
       }
       setSearching(true);
       try {
         if (navigator.onLine) {
-          setHits(await searchRegistrantsAction(eventSlug, q));
-        } else {
-          const local = await searchAttendees(q);
-          setHits(
-            local.map((a) => ({
-              qrToken: a.qrToken,
-              firstName: a.firstName,
-              lastName: a.lastName,
-              registrationCode: a.registrationCode,
-              phoneMasked: a.phoneMasked,
-              sessionNames: a.sessionNames,
-              checkedIn: a.checkedIn,
-              checkedInAt: null,
-            })),
-          );
+          try {
+            setHits(await searchRegistrantsAction(eventSlug, q));
+            setUsedLocalData(false);
+            reportServerReachable(true);
+            return;
+          } catch {
+            // ติดต่อเซิร์ฟเวอร์ไม่ได้ — ตกไปใช้รายชื่อในเครื่องแทน
+            reportServerReachable(false);
+          }
         }
+        setHits(await searchLocal(q));
+        setUsedLocalData(true);
       } finally {
         setSearching(false);
       }
     },
-    [eventSlug],
+    [eventSlug, searchLocal],
   );
 
   // หน่วงการค้นหาไว้ 300 ms เพื่อไม่ให้ยิงทุกตัวอักษรที่พิมพ์
@@ -71,21 +92,28 @@ export function SearchScreen({ eventSlug, staffName }: { eventSlug: string; staf
   async function confirmCheckIn(hit: SearchHit) {
     primeAudio();
     if (navigator.onLine) {
-      const outcome = await checkInByTokenAction({
-        qrToken: hit.qrToken,
-        deviceId: getDeviceId(),
-        method: "search",
-      });
-      setResult(outcome);
-      playFeedback(
-        outcome.status === "success"
-          ? "success"
-          : outcome.status === "duplicate"
-            ? "duplicate"
-            : "invalid",
-      );
-      if (outcome.status === "success") await markCheckedInLocally(hit.qrToken);
-      return;
+      try {
+        const outcome = await checkInByTokenAction({
+          qrToken: hit.qrToken,
+          deviceId: getDeviceId(),
+          method: "search",
+        });
+        setResult(outcome);
+        playFeedback(
+          outcome.status === "success"
+            ? "success"
+            : outcome.status === "duplicate"
+              ? "duplicate"
+              : "invalid",
+        );
+        if (outcome.status === "success") await markCheckedInLocally(hit.qrToken);
+        reportServerReachable(true);
+        return;
+      } catch {
+        // ส่งไม่ถึงเซิร์ฟเวอร์ — เก็บเข้าคิวในเครื่องแทน
+        // ⚠️ ห้ามปล่อยให้ล้มเฉย ๆ เด็ดขาด ไม่งั้นการเช็คอินของคนนี้จะหายไปทั้งรายการ
+        reportServerReachable(false);
+      }
     }
 
     const checkedInAt = new Date().toISOString();
@@ -172,6 +200,13 @@ export function SearchScreen({ eventSlug, staffName }: { eventSlug: string; staf
             />
 
             {searching && <p className="text-sm text-muted">กำลังค้นหา...</p>}
+
+            {!searching && usedLocalData && keyword.trim().length >= 2 && (
+              <p className="text-xs bg-[var(--color-warning-bg)] text-[var(--color-warning)] rounded-[var(--radius-control)] px-3 py-2">
+                ติดต่อเซิร์ฟเวอร์ไม่ได้ — กำลังค้นจากรายชื่อที่ดาวน์โหลดไว้ในเครื่อง
+                คนที่ลงทะเบียนหลังจากดาวน์โหลดจะยังไม่อยู่ในรายชื่อนี้
+              </p>
+            )}
 
             {!searching && keyword.trim().length >= 2 && hits.length === 0 && (
               <div className="text-center py-8 flex flex-col items-center gap-3">

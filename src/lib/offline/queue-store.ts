@@ -23,9 +23,23 @@ type QueueState = {
   pendingCount: number;
   lastSync: string | null;
   syncing: boolean;
+  /**
+   * ติดต่อเซิร์ฟเวอร์ได้จริงหรือไม่
+   *
+   * ⚠️ แยกจาก navigator.onLine โดยตั้งใจ
+   *    เน็ตในงานอีเวนต์มักเป็นแบบ "ต่อ Wi-Fi ติด แต่ออกอินเทอร์เน็ตไม่ได้"
+   *    ซึ่ง navigator.onLine ยังเป็น true อยู่ ทำให้แถบสถานะขึ้นว่าออนไลน์
+   *    ทั้งที่ส่งข้อมูลไม่ได้เลย เจ้าหน้าที่จึงไม่รู้ตัวว่ากำลังทำงานแบบออฟไลน์
+   */
+  serverReachable: boolean;
 };
 
-let state: QueueState = { pendingCount: 0, lastSync: null, syncing: false };
+let state: QueueState = {
+  pendingCount: 0,
+  lastSync: null,
+  syncing: false,
+  serverReachable: true,
+};
 let initialized = false;
 const listeners = new Set<() => void>();
 
@@ -60,9 +74,24 @@ export function getQueueSnapshot(): QueueState {
 }
 
 /** ฝั่งเซิร์ฟเวอร์ยังไม่มี IndexedDB — คืนค่าเริ่มต้นคงที่ */
-const SERVER_STATE: QueueState = { pendingCount: 0, lastSync: null, syncing: false };
+const SERVER_STATE: QueueState = {
+  pendingCount: 0,
+  lastSync: null,
+  syncing: false,
+  serverReachable: true,
+};
 export function getQueueServerSnapshot(): QueueState {
   return SERVER_STATE;
+}
+
+/**
+ * บันทึกผลการติดต่อเซิร์ฟเวอร์ครั้งล่าสุด
+ *
+ * ให้ทุกจุดที่เรียก server action รายงานผลเข้ามาที่นี่
+ * แถบสถานะจะได้บอกความจริงกับเจ้าหน้าที่ว่าตอนนี้ส่งข้อมูลขึ้นระบบได้หรือไม่
+ */
+export function reportServerReachable(reachable: boolean): void {
+  if (state.serverReachable !== reachable) setState({ serverReachable: reachable });
 }
 
 /** เพิ่มการเช็คอินเข้าคิว แล้วอัปเดตตัวนับให้หน้าจอเห็นทันที */
@@ -88,6 +117,7 @@ export async function syncQueue(): Promise<void> {
   setState({ syncing: true });
   try {
     const outcomes = await syncPendingCheckInsAction(items);
+    reportServerReachable(true);
     for (const outcome of outcomes) {
       // สำเร็จหรือซ้ำ ถือว่าจัดการเสร็จแล้วทั้งคู่ — เอาออกจากคิวได้
       // (ซ้ำแปลว่าอีกเครื่องสแกนคนเดียวกันไปก่อนแล้ว ซึ่งถูกต้องตามกฎเวลาที่เร็วที่สุดชนะ)
@@ -97,6 +127,7 @@ export async function syncQueue(): Promise<void> {
     }
   } catch {
     // sync ไม่สำเร็จก็ปล่อยไว้ในคิว รอบหน้าจะลองใหม่
+    reportServerReachable(false);
   } finally {
     setState({ syncing: false });
     await refreshQueueState();

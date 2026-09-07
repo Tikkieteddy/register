@@ -41,8 +41,18 @@ function getOnlineServerSnapshot(): boolean {
  * และ sync กลับอัตโนมัติเมื่อเน็ตกลับมา โดยเจ้าหน้าที่ไม่ต้องกดอะไร
  */
 export function useOnlineSync() {
-  const online = useSyncExternalStore(subscribeOnline, getOnlineSnapshot, getOnlineServerSnapshot);
+  const browserOnline = useSyncExternalStore(
+    subscribeOnline,
+    getOnlineSnapshot,
+    getOnlineServerSnapshot,
+  );
   const queue = useSyncExternalStore(subscribeQueue, getQueueSnapshot, getQueueServerSnapshot);
+
+  /**
+   * ถือว่า "ออนไลน์" ก็ต่อเมื่อเบราว์เซอร์บอกว่าต่อเน็ตอยู่ **และ** ติดต่อเซิร์ฟเวอร์ได้จริง
+   * เพราะกรณีที่เจอบ่อยที่สุดหน้างานคือ Wi-Fi ต่อติดแต่ออกอินเทอร์เน็ตไม่ได้
+   */
+  const online = browserOnline && queue.serverReachable;
 
   const sync = useCallback(() => syncQueue(), []);
   const refreshCounts = useCallback(() => refreshQueueState(), []);
@@ -50,8 +60,8 @@ export function useOnlineSync() {
   // เน็ตกลับมาแล้ว sync ทันทีโดยเจ้าหน้าที่ไม่ต้องกดอะไร
   // (syncQueue เปลี่ยนสถานะใน store ภายนอก ไม่ใช่ setState ของ React)
   useEffect(() => {
-    if (online) void syncQueue();
-  }, [online]);
+    if (browserOnline) void syncQueue();
+  }, [browserOnline]);
 
   // เผื่อกรณีที่เบราว์เซอร์ไม่ยิง event ให้ — ลอง sync ซ้ำทุก 30 วินาที
   useEffect(() => {

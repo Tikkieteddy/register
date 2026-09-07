@@ -11,10 +11,9 @@
  *   ② ตัดเน็ต แล้วเช็คอินต่อ — ต้องยังทำงานได้และเก็บเข้าคิว
  *   ③ ต่อเน็ตกลับ — ต้อง sync ขึ้นเซิร์ฟเวอร์อัตโนมัติโดยไม่ต้องกดอะไร
  */
-import { chromium } from "playwright";
+import { launchBrowser } from "./browser.mjs";
 
-const executablePath = process.env.CHROMIUM_PATH ?? undefined;
-const b = await chromium.launch(executablePath ? { executablePath } : {});
+const b = await launchBrowser();
 const ctx = await b.newContext({ viewport: { width: 430, height: 930 } });
 const p = await ctx.newPage();
 const errs = [];
@@ -27,6 +26,9 @@ const BASE = "http://localhost:3100";
 // ---------- ล็อกอินและดาวน์โหลดรายชื่อขณะออนไลน์ ----------
 await p.goto(`${BASE}/staff/login`, { waitUntil: "domcontentloaded" });
 await p.getByRole("heading", { name: "เข้าสู่ระบบเจ้าหน้าที่" }).waitFor({ timeout: 20000 });
+// รอให้ React ผูก event handler เสร็จก่อนพิมพ์
+// ถ้าพิมพ์เร็วเกินไป ค่าที่กรอกจะถูกล้างตอน hydrate แล้วฟอร์มจะส่งค่าว่าง
+await p.waitForTimeout(1500);
 await p.getByLabel("อีเมล").fill("staff@example.com");
 await p.getByLabel("รหัสผ่าน", { exact: true }).fill("staff-dev-1234");
 await p.getByRole("button", { name: "เข้าสู่ระบบ" }).click();
@@ -46,6 +48,8 @@ log(Boolean(offlineBar), `แถบสถานะเปลี่ยนเป็
 // ---------- เช็คอินขณะออฟไลน์ผ่านหน้าค้นหา ----------
 await p.getByRole("link", { name: /ค้นหารายชื่อ/ }).click();
 await p.getByLabel("ค้นหาผู้ลงทะเบียน").waitFor({ timeout: 20000 });
+// รอ hydrate ก่อนพิมพ์ ไม่งั้นค่าที่กรอกจะถูกล้างตอน React ผูก event handler
+await p.waitForTimeout(1500);
 await p.getByLabel("ค้นหาผู้ลงทะเบียน").fill("สมชาย");
 await p.waitForTimeout(1500);
 const offlineHits = await p.locator("li button").count();
