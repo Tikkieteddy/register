@@ -38,6 +38,12 @@ const EMAIL_LABEL: Record<string, string> = {
   complained: "ถูกร้องเรียน",
 };
 
+/**
+ * งานสร้างไฟล์ของงานใหญ่ (หลายพันแถว) ใช้เวลานานกว่าค่าเริ่มต้นของ Vercel
+ * 60 วินาทีเป็นเพดานสูงสุดของแพ็กเกจฟรี
+ */
+export const maxDuration = 60;
+
 export async function GET(request: NextRequest) {
   const admin = await getAdminOrNull();
   if (!admin) {

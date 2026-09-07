@@ -26,6 +26,9 @@ const serverSchema = z.object({
   /** ใช้แฮช IP และ visitor id — ห้ามเก็บ IP ดิบตามข้อกำหนด PDPA */
   HASH_SALT: z.string().min(16, "HASH_SALT ต้องยาวอย่างน้อย 16 ตัวอักษร").optional(),
 
+  /** ใช้ยืนยันว่าคำขอ cron มาจาก Vercel จริง ไม่ใช่คนภายนอกยิงเข้ามา */
+  CRON_SECRET: z.string().min(16).optional(),
+
   /** ใช้เซ็น session ของเจ้าหน้าที่และผู้ดูแลระบบ */
   SESSION_SECRET: z
     .string()
