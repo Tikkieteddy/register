@@ -31,6 +31,63 @@ function required(name: string, why: string, fix: string): string | null {
   return value;
 }
 
+/**
+ * แปลง error ตอนต่อฐานข้อมูลให้บอกสาเหตุจริงเป็นภาษาไทย
+ *
+ * ⚠️ ไลบรารี postgres ห่อสาเหตุจริงไว้ใน .cause ชั้นใน
+ *    ถ้าอ่านแค่ error.message จะได้แค่ "Failed query: select ..." ซึ่งบอกอะไรไม่ได้เลย
+ *    ว่าผิดเพราะรหัสผ่าน · หาเซิร์ฟเวอร์ไม่เจอ · หรือต่อไม่ถึง
+ */
+function describeDbError(error: unknown): { message: string; fix: string } {
+  // ไล่ลงไปจนถึงสาเหตุชั้นในสุด
+  let root: unknown = error;
+  while (root instanceof Error && root.cause) root = root.cause;
+
+  const code = typeof root === "object" && root !== null && "code" in root
+    ? String((root as { code: unknown }).code)
+    : "";
+  const detail = root instanceof Error ? root.message : String(root);
+
+  const known: Record<string, { message: string; fix: string }> = {
+    "28P01": {
+      message: "รหัสผ่านในสตริงเชื่อมต่อไม่ถูกต้อง",
+      fix: "รหัสผ่านไม่ตรงกับที่ตั้งไว้ใน Supabase — ระวังตัวพิมพ์ใหญ่-เล็ก และอักขระพิเศษอย่าง @ : / ? # ที่ต้องเข้ารหัสก่อนใส่ใน URL",
+    },
+    "28000": {
+      message: "ชื่อผู้ใช้ในสตริงเชื่อมต่อไม่ถูกต้อง",
+      fix: "ถ้าต่อผ่าน pooler ของ Supabase ชื่อผู้ใช้ต้องเป็น postgres.<รหัสโปรเจกต์> ไม่ใช่ postgres เฉย ๆ",
+    },
+    "3D000": {
+      message: "ไม่พบฐานข้อมูลชื่อนี้บนเซิร์ฟเวอร์",
+      fix: "ตรวจชื่อฐานข้อมูลท้ายสตริง — ของ Supabase ต้องเป็น /postgres",
+    },
+    ENOTFOUND: {
+      message: "หาเซิร์ฟเวอร์ฐานข้อมูลไม่เจอ",
+      fix: "ชื่อโฮสต์ผิด หรือรหัสผ่านมี @ ทำให้ตัดสตริงผิดจุด — เปลี่ยนรหัสผ่านให้เหลือแค่ตัวอักษรกับตัวเลข",
+    },
+    ECONNREFUSED: {
+      message: "เซิร์ฟเวอร์ปฏิเสธการเชื่อมต่อ",
+      fix: "ตรวจพอร์ต — ตัวเว็บใช้ 6543 (pooler) ส่วน migration ใช้ 5432",
+    },
+    ENETUNREACH: {
+      message: "ต่อไปยังเซิร์ฟเวอร์ไม่ถึง",
+      fix: "พอร์ต 5432 ของ Supabase เป็น IPv6 เท่านั้น — ให้ใช้ 6543 (pooler) สำหรับตัวเว็บ",
+    },
+    ETIMEDOUT: {
+      message: "เชื่อมต่อนานเกินกำหนด",
+      fix: "เครือข่ายถูกบล็อก หรือโปรเจกต์ Supabase ถูกพักอยู่ — ลองเปิดหน้า Supabase แล้วปลุกโปรเจกต์ก่อน",
+    },
+  };
+
+  const match = known[code];
+  if (match) return { message: `${match.message} (รหัส ${code})`, fix: match.fix };
+
+  return {
+    message: detail,
+    fix: "ตรวจ DATABASE_URL และตรวจว่าอนุญาตให้เชื่อมต่อจากภายนอกแล้ว",
+  };
+}
+
 function optional(name: string, why: string, fix: string): string | null {
   const value = process.env[name];
   if (!value) {
@@ -174,11 +231,8 @@ async function main() {
         add("ok", "มีบัญชีผู้ดูแลที่พร้อมใช้งาน");
       }
     } catch (error) {
-      add(
-        "error",
-        `ต่อฐานข้อมูลไม่สำเร็จ: ${error instanceof Error ? error.message : String(error)}`,
-        "ตรวจ DATABASE_URL และตรวจว่าอนุญาตให้เชื่อมต่อจากภายนอกแล้ว",
-      );
+      const { message, fix } = describeDbError(error);
+      add("error", `ต่อฐานข้อมูลไม่สำเร็จ: ${message}`, fix);
     }
   }
 
