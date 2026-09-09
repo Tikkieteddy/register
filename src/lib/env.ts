@@ -6,6 +6,12 @@ import { z } from "zod";
  */
 const serverSchema = z.object({
   DATABASE_URL: z.string().url("DATABASE_URL ต้องเป็น connection string ของ PostgreSQL"),
+
+  /**
+   * เส้นทางต่อฐานข้อมูลแบบ session mode (พอร์ต 5432) ที่ Supabase ให้มาคู่กัน
+   * ใช้เฉพาะตอนรัน migration เท่านั้น ตัวเว็บไม่ได้ใช้ค่านี้
+   */
+  DIRECT_URL: z.string().url().optional(),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 
   RESEND_API_KEY: z.string().min(1).optional(),

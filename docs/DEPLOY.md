@@ -38,15 +38,31 @@
    - **Database Password:** กดสุ่มแล้ว**เก็บไว้ให้ดี** (ใช้ใน connection string)
    - **Region:** ⚠️ ต้องเลือก **Southeast Asia (Singapore)** — ใกล้ผู้ใช้ไทยที่สุด
 3. รอสร้างเสร็จ (~2 นาที)
-4. ไปที่ **Project Settings → Database → Connection string → URI**
-5. เลือกโหมด **Transaction pooler** (พอร์ต `6543`) แล้วคัดลอกไว้
+4. กดปุ่ม **Connect** สีเขียวด้านบนของหน้า Dashboard (ข้าง ๆ ชื่อโปรเจกต์)
+5. ในหน้าต่างที่เด้งขึ้นมา เลือกแท็บ **ORMs** แล้วจะเห็นกล่องโค้ดที่มี 2 บรรทัดนี้:
 
-```
-postgresql://postgres.xxxxx:[YOUR-PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
+```bash
+DATABASE_URL="postgresql://postgres.xxxxx:[YOUR-PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres"
+DIRECT_URL="postgresql://postgres.xxxxx:[YOUR-PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"
 ```
 
-> **ทำไมต้องใช้ pooler พอร์ต 6543:** Vercel รันแบบ serverless ซึ่งเปิดการเชื่อมต่อใหม่บ่อยมาก
+กดปุ่มคัดลอกมุมขวาบนของกล่องโค้ด แล้วแทนที่ `[YOUR-PASSWORD]` ด้วยรหัสผ่านจากข้อ 2
+
+> **ไม่ต้องสนใจขั้นตอนอื่นในหน้านั้น** — หน้านี้เขียนไว้สำหรับ Prisma แต่โปรเจกต์เราใช้ Drizzle
+> เอาแค่ 2 บรรทัดนี้พอ **ห้ามรัน `npm install prisma`**
+
+**แต่ละเส้นใช้ตอนไหน:**
+
+| ตัวแปร | พอร์ต | ใช้ทำอะไร | ใส่ใน Vercel ไหม |
+|---|---|---|---|
+| `DATABASE_URL` | 6543 | ตัวเว็บใช้ตอนทำงานจริง | ✅ ต้องใส่ |
+| `DIRECT_URL` | 5432 | ใช้เฉพาะตอนรัน migration จากเครื่องตัวเอง | ❌ ไม่ต้องใส่ |
+
+> **ทำไมตัวเว็บต้องใช้พอร์ต 6543:** Vercel รันแบบ serverless ซึ่งเปิดการเชื่อมต่อใหม่บ่อยมาก
 > ถ้าต่อตรงพอร์ต 5432 จะเต็มโควตาการเชื่อมต่อแล้วเว็บล่มตอนคนเข้าพร้อมกัน
+>
+> **ทำไม migration ต้องใช้พอร์ต 5432:** คำสั่งสร้างตาราง (DDL) ต้องใช้การต่อแบบ session mode
+> ถ้ารันผ่าน pooler จะล้มกลางคัน
 
 ### สร้างตารางในฐานข้อมูล
 
@@ -57,10 +73,11 @@ git clone https://github.com/Tikkieteddy/register.git
 cd register
 npm install
 
-# วาง connection string จากข้อ 5 ลงไป
-echo 'DATABASE_URL="postgresql://postgres.xxxxx:...@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres"' > .env.local
+# สร้างไฟล์ .env.local แล้ววาง 2 บรรทัดจากข้อ 5 ลงไป (แทนที่ [YOUR-PASSWORD] แล้ว)
+#   DATABASE_URL="postgresql://postgres.xxxxx:รหัสผ่าน@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres"
+#   DIRECT_URL="postgresql://postgres.xxxxx:รหัสผ่าน@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"
 
-npm run db:migrate     # สร้าง 20 ตาราง
+npm run db:migrate     # สร้าง 20 ตาราง (ใช้ DIRECT_URL อัตโนมัติ)
 npm run db:seed        # ใส่งานตัวอย่าง ช่วงเวลา คำถาม ลิงก์ และบัญชีผู้ใช้
 ```
 
@@ -103,7 +120,7 @@ npm run user:password -- staff@example.com "รหัสผ่านของเ
 
 | ตัวแปร | ค่า |
 |---|---|
-| `DATABASE_URL` | connection string จากขั้นตอนที่ 1 (พอร์ต 6543) |
+| `DATABASE_URL` | เส้น Transaction pooler **พอร์ต 6543** จากขั้นตอนที่ 1 (⚠️ ไม่ใช่ `DIRECT_URL`) |
 | `NEXT_PUBLIC_SITE_URL` | URL เต็มของเว็บ เช่น `https://register.tnn.co.th` — ⚠️ **ห้ามมี `/` ปิดท้าย** |
 | `HASH_SALT` | ค่าสุ่ม 64 ตัวอักษร (ดูวิธีสร้างด้านล่าง) |
 | `SESSION_SECRET` | ค่าสุ่ม 64 ตัวอักษร (ดูวิธีสร้างด้านล่าง) |
@@ -295,7 +312,8 @@ npm run db:migrate
 | อีเมลไม่ถึง หรือตกถัง Junk | SPF / DKIM / DMARC ยังไม่ครบ | กลับไปทำขั้นตอนที่ 5 ให้ครบ |
 | ภาพที่อัปโหลดหายหลัง deploy | ยังไม่ได้ตั้งค่า R2 | ทำขั้นตอนที่ 6 |
 | ลิงก์ในอีเมลชี้ไป URL เก่า | ลืมแก้ `NEXT_PUBLIC_SITE_URL` หลังผูกโดเมน | แก้แล้ว Redeploy |
-| ฐานข้อมูล connection เต็ม | ใช้พอร์ต 5432 แทน 6543 | เปลี่ยนไปใช้ Transaction pooler |
+| ฐานข้อมูล connection เต็ม | ใส่ `DIRECT_URL` (5432) ลงใน Vercel แทน `DATABASE_URL` (6543) | เปลี่ยนเป็นเส้น Transaction pooler |
+| `db:migrate` ล้มกลางคัน | รัน migration ผ่าน pooler พอร์ต 6543 | ใส่ `DIRECT_URL` ลงใน `.env.local` ด้วย |
 
 ---
 
