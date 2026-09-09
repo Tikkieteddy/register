@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { logoutAction } from "@/app/actions/auth";
+import { EventSwitcher } from "@/components/admin/events/EventSwitcher";
+import type { AdminEventOption } from "@/lib/admin/current-event";
 
 /**
  * โครงหน้าของหลังบ้านทั้งหมด — แถบเมนูข้างซ้าย
@@ -18,6 +20,7 @@ const NAV = [
   { href: "/admin/links", label: "ลิงก์ติดตามผล", icon: "⇗" },
   { href: "/admin/media", label: "ภาพและสื่อ", icon: "▣" },
   { href: "/admin/settings", label: "ตั้งค่างาน", icon: "⚙" },
+  { href: "/admin/events", label: "จัดการงาน", icon: "◈" },
   { href: "/admin/audit", label: "บันทึกการใช้งาน", icon: "⏱" },
 ] as const;
 
@@ -25,10 +28,14 @@ export function AdminShell({
   children,
   userName,
   eventName,
+  events,
+  currentSlug,
 }: {
   children: ReactNode;
   userName: string;
   eventName: string;
+  events: AdminEventOption[];
+  currentSlug: string | null;
 }) {
   const pathname = usePathname() ?? "/admin";
   const [menuOpen, setMenuOpen] = useState(false);
@@ -56,9 +63,16 @@ export function AdminShell({
           menuOpen ? "flex border-b" : "hidden lg:flex"
         }`}
       >
-        <div className="px-4 py-4 border-b border-line hidden lg:block">
-          <p className="text-xs text-muted">หลังบ้านผู้ดูแล</p>
-          <p className="font-semibold text-ink leading-snug">{eventName}</p>
+        <div className="px-4 py-4 border-b border-line hidden lg:flex lg:flex-col lg:gap-3">
+          <div>
+            <p className="text-xs text-muted">หลังบ้านผู้ดูแล</p>
+            <p className="font-semibold text-ink leading-snug">{eventName}</p>
+          </div>
+          <EventSwitcher events={events} currentSlug={currentSlug} />
+        </div>
+
+        <div className="p-3 border-b border-line lg:hidden">
+          <EventSwitcher events={events} currentSlug={currentSlug} />
         </div>
 
         <nav className="flex flex-col gap-1 p-2">

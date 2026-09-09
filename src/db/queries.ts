@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { db } from "./index";
 import { eventSessions, events, formOptions, formQuestions, shareLinks } from "./schema";
 
@@ -47,19 +47,108 @@ export async function getEventBySlug(slug: string) {
   const totalRemaining = sessions.reduce((sum, s) => sum + (s.isClosed ? 0 : s.remaining), 0);
   const now = new Date();
 
-  /** เหตุผลที่ปิดรับ — ใช้เลือกข้อความและสถานะปุ่มบนหน้า Landing */
-  const registrationState: "open" | "not_open_yet" | "closed" | "sold_out" =
-    event.status !== "published"
-      ? "closed"
-      : event.registrationOpensAt && now < event.registrationOpensAt
-        ? "not_open_yet"
-        : event.registrationClosesAt && now > event.registrationClosesAt
-          ? "closed"
-          : totalRemaining <= 0
-            ? "sold_out"
-            : "open";
+  const registrationState = computeRegistrationState(event, totalRemaining, now);
 
   return { event, sessions, totalRemaining, registrationState };
+}
+
+export type RegistrationState = "open" | "not_open_yet" | "closed" | "sold_out";
+
+/**
+ * เหตุผลที่รับหรือไม่รับลงทะเบียน — ใช้เลือกข้อความและสถานะปุ่ม
+ *
+ * แยกออกมาเป็นฟังก์ชันเพราะทั้งหน้ารายละเอียดงานและการ์ดบนหน้าแรกต้องใช้ตรรกะเดียวกัน
+ * ถ้าเขียนแยกกันสองที่ วันหนึ่งจะเพี้ยนกัน เช่นหน้าแรกบอก "เปิดรับ" แต่กดเข้าไปแล้วปิด
+ */
+export function computeRegistrationState(
+  event: {
+    status: string;
+    registrationOpensAt: Date | null;
+    registrationClosesAt: Date | null;
+  },
+  totalRemaining: number,
+  now: Date = new Date(),
+): RegistrationState {
+  if (event.status !== "published") return "closed";
+  if (event.registrationOpensAt && now < event.registrationOpensAt) return "not_open_yet";
+  if (event.registrationClosesAt && now > event.registrationClosesAt) return "closed";
+  if (totalRemaining <= 0) return "sold_out";
+  return "open";
+}
+
+/** การ์ดงานหนึ่งใบบนหน้าแรก */
+export type EventCard = {
+  id: string;
+  slug: string;
+  nameTh: string;
+  nameEn: string | null;
+  descriptionTh: string | null;
+  category: string | null;
+  venueName: string | null;
+  startsAt: Date;
+  endsAt: Date;
+  themeColor: string;
+  totalQuota: number;
+  totalRemaining: number;
+  registrationState: RegistrationState;
+  hasEnded: boolean;
+};
+
+/**
+ * รายชื่องานทั้งหมดที่เผยแพร่แล้ว สำหรับหน้าแรก
+ *
+ * ⚠️ รวมยอดที่นั่งด้วย SQL ครั้งเดียว ไม่วนถามทีละงาน
+ *    ถ้าวน query ตามจำนวนงาน หน้าแรกจะช้าลงเรื่อย ๆ ทุกครั้งที่เพิ่มงานใหม่
+ *    (ปัญหา N+1) ซึ่งเป็นหน้าที่คนเข้าเยอะที่สุดของระบบ
+ *
+ * นับเฉพาะช่วงเวลาที่ยังไม่ปิด — ช่วงที่ปิดแล้วไม่ควรถูกนับเป็นที่นั่งว่าง
+ */
+export async function listPublishedEvents(): Promise<EventCard[]> {
+  const rows = await db
+    .select({
+      id: events.id,
+      slug: events.slug,
+      nameTh: events.nameTh,
+      nameEn: events.nameEn,
+      descriptionTh: events.descriptionTh,
+      category: events.category,
+      venueName: events.venueName,
+      startsAt: events.startsAt,
+      endsAt: events.endsAt,
+      themeColor: events.themeColor,
+      status: events.status,
+      registrationOpensAt: events.registrationOpensAt,
+      registrationClosesAt: events.registrationClosesAt,
+      quota: sql<number>`coalesce(sum(${eventSessions.quota}) filter (where ${eventSessions.isClosed} = false), 0)::int`,
+      reserved: sql<number>`coalesce(sum(${eventSessions.reservedCount}) filter (where ${eventSessions.isClosed} = false), 0)::int`,
+    })
+    .from(events)
+    .leftJoin(eventSessions, eq(eventSessions.eventId, events.id))
+    .where(eq(events.status, "published"))
+    .groupBy(events.id)
+    .orderBy(desc(events.startsAt));
+
+  const now = new Date();
+
+  return rows.map((row) => {
+    const totalRemaining = Math.max(row.quota - row.reserved, 0);
+    return {
+      id: row.id,
+      slug: row.slug,
+      nameTh: row.nameTh,
+      nameEn: row.nameEn,
+      descriptionTh: row.descriptionTh,
+      category: row.category,
+      venueName: row.venueName,
+      startsAt: row.startsAt,
+      endsAt: row.endsAt,
+      themeColor: row.themeColor,
+      totalQuota: row.quota,
+      totalRemaining,
+      registrationState: computeRegistrationState(row, totalRemaining, now),
+      hasEnded: row.endsAt < now,
+    };
+  });
 }
 
 /** คำถามในฟอร์มพร้อมตัวเลือก เรียงตามลำดับที่ Admin ตั้งไว้ */

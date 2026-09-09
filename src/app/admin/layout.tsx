@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { getAdminEvent } from "@/lib/admin/current-event";
+import { getAdminEvent, listAdminEvents } from "@/lib/admin/current-event";
 import { requireAdmin } from "@/lib/admin/guard";
 
 export const metadata: Metadata = {
@@ -11,10 +11,15 @@ export const metadata: Metadata = {
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await requireAdmin();
-  const event = await getAdminEvent();
+  const [event, allEvents] = await Promise.all([getAdminEvent(), listAdminEvents()]);
 
   return (
-    <AdminShell userName={user.fullName} eventName={event?.nameTh ?? "ยังไม่มีงานในระบบ"}>
+    <AdminShell
+      userName={user.fullName}
+      eventName={event?.nameTh ?? "ยังไม่มีงานในระบบ"}
+      events={allEvents}
+      currentSlug={event?.slug ?? null}
+    >
       {children}
     </AdminShell>
   );
