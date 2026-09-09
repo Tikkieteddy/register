@@ -320,6 +320,7 @@ npm run db:migrate
 | ลิงก์ในอีเมลชี้ไป URL เก่า | ลืมแก้ `NEXT_PUBLIC_SITE_URL` หลังผูกโดเมน | แก้แล้ว Redeploy |
 | ฐานข้อมูล connection เต็ม | ใส่ `DIRECT_URL` (5432) ลงใน Vercel แทน `DATABASE_URL` (6543) | เปลี่ยนเป็นเส้น Transaction pooler |
 | `db:migrate` ล้มกลางคัน | รัน migration ผ่าน pooler พอร์ต 6543 | ใส่ `DIRECT_URL` ลงใน `.env.local` ด้วย |
+| ขึ้น `Application error` ทุกหน้าที่อ่านฐานข้อมูล แต่หน้า login ปกติ | ตอน import โปรเจกต์ Vercel สร้างตัวแปรจาก `.env.example` ให้โดยใส่ค่าเป็นสตริงว่าง | ระบบมองค่าว่างเป็น "ยังไม่ได้ตั้ง" ให้แล้วตั้งแต่ v1.1 — ถ้ายังเจอ ให้ลบตัวแปรที่ค่าว่างทิ้งใน Vercel |
 
 ---
 
