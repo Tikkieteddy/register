@@ -4,6 +4,8 @@
  *
  * รันด้วย: npx tsx scripts/preview-email.ts preview.html
  */
+// โหลด .env.local ก่อนทุกอย่าง เพราะสคริปต์นี้รันนอก Next.js
+import "../src/lib/load-env";
 import { writeFileSync } from "node:fs";
 import { db } from "@/db";
 import { registrations } from "@/db/schema";

@@ -1,3 +1,5 @@
+// โหลด .env.local ก่อน เพราะ drizzle-kit ไม่ได้โหลดไฟล์ .env ให้เอง
+import "./src/lib/load-env";
 import type { Config } from "drizzle-kit";
 
 /**

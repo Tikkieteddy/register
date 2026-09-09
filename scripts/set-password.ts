@@ -7,6 +7,8 @@
  * ⚠️ อย่าใส่รหัสผ่านจริงลงในไฟล์ใด ๆ ของโปรเจกต์
  *    และเปลี่ยนรหัสผ่านของบัญชีตัวอย่างก่อนขึ้นใช้งานจริงเสมอ
  */
+// โหลด .env.local ก่อนทุกอย่าง เพราะสคริปต์นี้รันนอก Next.js
+import "../src/lib/load-env";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "@/db/schema";

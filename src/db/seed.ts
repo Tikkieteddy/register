@@ -7,6 +7,8 @@
  * ค่าที่ใช้เป็นค่า default ตามคำตอบคำถาม Q5–Q10 และ Q24 ในเอกสาร
  * แก้ได้ทั้งหมดจากหลังบ้านภายหลัง โดยไม่ต้องแก้โค้ด
  */
+// โหลด .env.local ก่อนทุกอย่าง เพราะสคริปต์นี้รันนอก Next.js
+import "../lib/load-env";
 import { eq } from "drizzle-orm";
 import { db } from "./index";
 import {

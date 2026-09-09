@@ -6,6 +6,8 @@
  *
  * รันด้วย: npm run db:demo
  */
+// โหลด .env.local ก่อนทุกอย่าง เพราะสคริปต์นี้รันนอก Next.js
+import "../src/lib/load-env";
 import { eq, sql } from "drizzle-orm";
 import { db } from "../src/db";
 import {

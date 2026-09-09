@@ -6,6 +6,8 @@
  *
  * รันด้วย: npx tsx scripts/test-quota.ts
  */
+// โหลด .env.local ก่อนทุกอย่าง เพราะสคริปต์นี้รันนอก Next.js
+import "../src/lib/load-env";
 import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { eventSessions, events, seatHolds } from "@/db/schema";

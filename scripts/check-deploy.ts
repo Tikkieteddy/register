@@ -10,6 +10,8 @@
  *
  * ออกด้วยรหัส 1 ถ้ามีข้อที่ต้องแก้ก่อน deploy
  */
+// โหลด .env.local ก่อนทุกอย่าง เพราะสคริปต์นี้รันนอก Next.js
+import "../src/lib/load-env";
 import { sql } from "drizzle-orm";
 
 type Level = "error" | "warn" | "ok";
@@ -192,7 +194,20 @@ async function main() {
 
   console.log("");
   if (errors > 0) {
-    console.log(`❌ ยังไม่พร้อม deploy — ต้องแก้ ${errors} ข้อ (มีคำเตือนอีก ${warnings} ข้อ)\n`);
+    console.log(`❌ ยังไม่พร้อม deploy — ต้องแก้ ${errors} ข้อ (มีคำเตือนอีก ${warnings} ข้อ)`);
+
+    /**
+     * ตอนตั้งค่าบนเครื่องตัวเอง ข้อที่ติดมักเป็น NEXT_PUBLIC_SITE_URL กับ R2
+     * ซึ่งเป็นเรื่องปกติและยังไม่ต้องแก้ — บอกให้ชัดจะได้ไม่เข้าใจผิดว่าตั้งค่าผิด
+     */
+    if (siteUrl?.includes("localhost")) {
+      console.log(
+        "\nℹ️  ถ้ากำลังตั้งค่าบนเครื่องตัวเองอยู่ ข้อ NEXT_PUBLIC_SITE_URL และ R2 ยังไม่ต้องแก้\n" +
+          "   ค่อยใส่ค่าจริงตอนตั้ง Environment Variables ใน Vercel\n" +
+          "   ตอนนี้ดูแค่ 3 บรรทัดนี้พอ: ต่อฐานข้อมูลได้ · มีข้อมูลงาน · มีบัญชีผู้ดูแล",
+      );
+    }
+    console.log("");
     process.exit(1);
   }
   console.log(
