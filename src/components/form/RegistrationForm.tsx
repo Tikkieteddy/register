@@ -10,7 +10,7 @@ import {
 import { submitRegistrationAction } from "@/app/actions/submit";
 import { Card, CardBody, CardTitle } from "@/components/ui/Card";
 import type { QuestionView, SessionView } from "@/db/queries";
-import type { Dictionary } from "@/i18n/dictionaries";
+import { t, type Dictionary } from "@/i18n/dictionaries";
 import { formatTimeRange } from "@/lib/datetime";
 import {
   emailSchema,
@@ -125,6 +125,8 @@ export function RegistrationForm({
   /** ช่วงเวลาที่กำลังรอเซิร์ฟเวอร์ตอบ — กันกดรัว */
   const [pendingSessions, setPendingSessions] = useState<string[]>([]);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  // การ์ดตั๋วกางอยู่เป็นค่าเริ่มต้น — คนส่วนใหญ่มาเพื่อกรอกฟอร์ม ไม่ใช่มาพับดู
+  const [ticketOpen, setTicketOpen] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [expired, setExpired] = useState(false);
@@ -507,7 +509,33 @@ export function RegistrationForm({
         {/* ---------- การ์ดตั๋ว ---------- */}
         <Card accent>
           <CardBody className="flex flex-col gap-5">
-            <h2 className="text-base font-semibold text-primary-dark">{dict.form.ticketTitle}</h2>
+            {/**
+             * หัวการ์ดพับเก็บ-กางออกได้ พร้อม chevron มุมขวาบน ตามภาพอ้างอิงที่ 3
+             *
+             * ⚠️ ใช้ hidden แทนการถอดเนื้อหาออกจาก DOM
+             *    ถ้าถอดออก ค่าที่กรอกไว้จะหายทันทีที่พับการ์ด แล้วตอนกดส่ง
+             *    ระบบจะมองว่ายังไม่ได้กรอก ทั้งที่ผู้ใช้กรอกไปแล้ว
+             */}
+            <button
+              type="button"
+              onClick={() => setTicketOpen((open) => !open)}
+              aria-expanded={ticketOpen}
+              aria-controls="ticket-card-body"
+              className="flex items-center justify-between gap-3 text-start -m-1 p-1 rounded-[var(--radius-control)]"
+            >
+              <h2 className="text-base font-semibold text-primary-dark">{dict.form.ticketTitle}</h2>
+              <span className="sr-only">{ticketOpen ? dict.form.collapse : dict.form.expand}</span>
+              <span
+                aria-hidden="true"
+                className={`text-primary-dark text-sm transition-transform duration-200 ${
+                  ticketOpen ? "" : "-rotate-90"
+                }`}
+              >
+                ▾
+              </span>
+            </button>
+
+            <div id="ticket-card-body" hidden={!ticketOpen} className="flex flex-col gap-5">
 
             {/* ช่วงเวลาที่สนใจ */}
             <div data-field="sessionIds">
@@ -527,9 +555,34 @@ export function RegistrationForm({
             {questions.map((q) => {
               const answer = draft.answers[q.id] ?? { optionIds: [], otherText: "" };
               const key = `q_${q.id}`;
-              const label = locale === "en" && q.labelEn ? q.labelEn : q.labelTh;
-              const helper =
+              const baseLabel = locale === "en" && q.labelEn ? q.labelEn : q.labelTh;
+              /**
+               * เงื่อนไขจำนวนที่เลือกได้ต้องต่อท้าย label ในวงเล็บ ตามภาคผนวก A1
+               * เช่น "ชื่นชอบรายการใดของ TNN (เลือกได้ไม่เกิน 3 รายการ) *"
+               *
+               * ⚠️ เดิมเขียนไว้เป็น helper ใต้ตัวเลือก ซึ่งอ่านเจอหลังเลือกไปแล้ว
+               *    คนจะติ๊กไปเรื่อย ๆ แล้วงงว่าทำไมช่องที่เหลือกดไม่ได้
+               */
+              const limitNote =
+                q.type === "checkbox" && q.maxSelect
+                  ? ` (${t(dict.form.chooseUpTo, { n: q.maxSelect })})`
+                  : "";
+              const label = `${baseLabel}${limitNote}`;
+              const rawHelper =
                 locale === "en" && q.helperTextEn ? q.helperTextEn : (q.helperTextTh ?? undefined);
+              /**
+               * ซ่อน helper ที่พูดเรื่องเดียวกับเงื่อนไขจำนวนที่เพิ่งต่อท้าย label
+               *
+               * ข้อมูลตัวอย่างเดิมเขียน "(เลือกได้ไม่เกิน 3 รายการ)" ไว้เป็น helper
+               * พอย้ายเงื่อนไขขึ้นไปที่ label ตามภาคผนวก A1 แล้วจะขึ้นซ้ำสองที่
+               * เทียบแบบตัดวงเล็บและช่องว่างออก ไม่ได้เดาจากคำ —
+               * ถ้าผู้ดูแลเขียนคำอธิบายอย่างอื่นไว้ ก็ยังแสดงตามเดิม
+               */
+              const normalize = (value: string) => value.replace(/[()\s]/g, "");
+              const helper =
+                limitNote && rawHelper && normalize(rawHelper) === normalize(limitNote)
+                  ? undefined
+                  : rawHelper;
               const choices: Choice[] = q.options.map((o) => ({
                 id: o.id,
                 label: locale === "en" && o.labelEn ? o.labelEn : o.labelTh,
@@ -645,16 +698,18 @@ export function RegistrationForm({
               </div>
             </div>
 
-            {/* ตัวเลือกเสริม ไม่บังคับ */}
-            <CheckboxRow
-              id="saveForNextTime"
-              checked={draft.saveForNextTime}
-              onChange={(v) => set("saveForNextTime", v)}
-            >
-              {dict.form.saveForNextTime}
-            </CheckboxRow>
+            </div>
           </CardBody>
         </Card>
+
+        {/* ตัวเลือกเสริม ไม่บังคับ — อยู่นอกการ์ดตั๋วตามภาคผนวก A1 */}
+        <CheckboxRow
+          id="saveForNextTime"
+          checked={draft.saveForNextTime}
+          onChange={(v) => set("saveForNextTime", v)}
+        >
+          {dict.form.saveForNextTime}
+        </CheckboxRow>
 
         {/* honeypot กัน bot — ซ่อนจากสายตาและจาก screen reader */}
         <div aria-hidden="true" className="absolute w-px h-px overflow-hidden -left-[9999px]">
