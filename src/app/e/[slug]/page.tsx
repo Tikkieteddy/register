@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ShareButtons } from "@/components/landing/ShareButtons";
+import { SiteHeader } from "@/components/site/SiteHeader";
 import { Card, CardBody } from "@/components/ui/Card";
 import { getEventBySlug } from "@/db/queries";
 import { currentYear, formatDateRange, formatTimeRange } from "@/lib/datetime";
@@ -88,32 +89,28 @@ export default async function EventLandingPage({ params, searchParams }: Props) 
 
   return (
     <div className="min-h-screen">
-      {/* ① Header — ติดหน้าจอเวลาเลื่อน */}
-      <header className="sticky top-0 z-40 bg-bg/90 backdrop-blur border-b border-line">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 h-14 flex items-center gap-4">
-          <Link href={`/e/${slug}`} className="font-[family-name:var(--font-display)] font-bold text-ink">
-            {event.organizerName ?? name}
-          </Link>
-          <nav className="hidden md:flex gap-5 ms-4 text-sm text-muted">
+      {/* ① แถบเมนูหลัก ใช้ร่วมกับทุกหน้าฝั่งผู้เข้าร่วมงาน */}
+      <SiteHeader siteName={event.organizerName ?? name} />
+
+      {/* แถบลัดไปแต่ละส่วนของหน้านี้ — แยกจากเมนูหลักเพราะเป็นลิงก์เฉพาะหน้านี้ */}
+      <div className="border-b border-line bg-surface">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 h-11 flex items-center gap-4 overflow-x-auto">
+          <nav className="flex gap-4 text-sm text-muted whitespace-nowrap" aria-label="ส่วนต่าง ๆ ของหน้านี้">
             <a href="#details" className="hover:text-primary-dark">{dict.nav.details}</a>
             <a href="#highlights" className="hover:text-primary-dark">{dict.nav.schedule}</a>
             <a href="#speakers" className="hover:text-primary-dark">{dict.nav.speakers}</a>
             <a href="#venue" className="hover:text-primary-dark">{dict.nav.venue}</a>
             <a href="#contact" className="hover:text-primary-dark">{dict.nav.contact}</a>
           </nav>
-          <div className="ms-auto flex items-center gap-2 text-sm">
-            <Link
-              href={`/e/${slug}?lang=${locale === "th" ? "en" : "th"}`}
-              className="px-2.5 py-1 rounded-[var(--radius-pill)] border border-line-strong text-ink-2 hover:border-primary hover:text-primary-dark"
-            >
-              {locale === "th" ? "EN" : "ไทย"}
-            </Link>
-            <Link href="/admin" className="text-muted hover:text-primary-dark hidden sm:inline">
-              {dict.nav.login}
-            </Link>
-          </div>
+          <Link
+            href={`/e/${slug}?lang=${locale === "th" ? "en" : "th"}`}
+            className="ms-auto shrink-0 px-2.5 py-1 rounded-[var(--radius-pill)] border border-line-strong
+              text-ink-2 text-sm hover:border-primary hover:text-primary-dark transition-colors"
+          >
+            {locale === "th" ? "EN" : "ไทย"}
+          </Link>
         </div>
-      </header>
+      </div>
 
       <main className="mx-auto max-w-5xl px-4 sm:px-6 pb-20 flex flex-col gap-8 sm:gap-10">
         {/* ② Hero banner */}

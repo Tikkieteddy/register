@@ -37,8 +37,8 @@
   --color-danger-border: #f0b4b4;
 
   /* --- ตัวอักษร --- */
-  --font-display: var(--font-plex-thai), "Noto Sans Thai", system-ui, sans-serif;
-  --font-body: var(--font-sarabun), "Noto Sans Thai", system-ui, sans-serif;
+  --font-display: var(--font-anuphan), "Noto Sans Thai", system-ui, sans-serif;
+  --font-body: var(--font-noto-thai), "IBM Plex Sans Thai", system-ui, sans-serif;
 
   /* --- รูปทรง --- */
   --radius-card: 12px;

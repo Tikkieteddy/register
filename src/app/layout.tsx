@@ -1,23 +1,28 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans_Thai, Sarabun } from "next/font/google";
+import { Anuphan, Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
 
 /**
  * ฟอนต์ต้องรองรับภาษาไทยและอ่านง่ายตามข้อกำหนดด้านการออกแบบ
- * โหลดผ่าน next/font เพื่อให้ self-host อัตโนมัติ ไม่ต้องเรียกไปที่ Google
- * ซึ่งช่วยทั้งเรื่องความเร็ว (LCP) และความเป็นส่วนตัวของผู้ใช้
+ *
+ * โหลดผ่าน next/font เพื่อให้ self-host อัตโนมัติ ไม่ต้องเรียกไปที่เซิร์ฟเวอร์ของ Google
+ * ซึ่งช่วยทั้งความเร็ว (LCP) ความเป็นส่วนตัวของผู้ใช้ และทำให้ผ่านกฎ CSP
+ * ที่อนุญาตให้โหลดฟอนต์จากโดเมนตัวเองเท่านั้น
+ *
+ * Anuphan — หัวข้อ · ทรงเรขาคณิต ปลายตัดตรง ดูสมัยใหม่ ไม่มีหัวกลมแบบฟอนต์ราชการ
+ * Noto Sans Thai — เนื้อความ · ออกแบบมาเพื่อการอ่านยาว ๆ วรรณยุกต์ไม่ชนกันแม้ตัวเล็ก
  */
-const plexThai = IBM_Plex_Sans_Thai({
+const anuphan = Anuphan({
   subsets: ["thai", "latin"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-plex-thai",
+  variable: "--font-anuphan",
   display: "swap",
 });
 
-const sarabun = Sarabun({
+const notoThai = Noto_Sans_Thai({
   subsets: ["thai", "latin"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-sarabun",
+  variable: "--font-noto-thai",
   display: "swap",
 });
 
@@ -34,7 +39,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="th" className={`${plexThai.variable} ${sarabun.variable}`}>
+    <html lang="th" className={`${anuphan.variable} ${notoThai.variable}`}>
       <body>{children}</body>
     </html>
   );

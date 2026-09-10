@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SiteFooter } from "@/components/site/SiteFooter";
+import { SiteHeader } from "@/components/site/SiteHeader";
 import { listPublishedEvents, type EventCard, type RegistrationState } from "@/db/queries";
-import { currentYear, formatDateRange, formatTimeRange } from "@/lib/datetime";
+import { formatDateRange, formatTimeRange } from "@/lib/datetime";
 
 /**
  * หน้าแรก — รวมงานทั้งหมดที่เปิดให้ลงทะเบียน
@@ -33,23 +35,24 @@ export default async function HomePage() {
   const past = events.filter((event) => event.hasEnded);
 
   return (
-    <div className="min-h-dvh flex flex-col">
-      <header className="border-b border-line bg-surface">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-          <span className="font-[family-name:var(--font-display)] font-bold text-ink">
-            {SITE_NAME}
-          </span>
-          <Link href="/admin" className="text-sm text-muted hover:text-primary-dark">
-            เข้าสู่ระบบผู้ดูแล
-          </Link>
-        </div>
-      </header>
+    <div className="min-h-dvh flex flex-col bg-bg">
+      <SiteHeader siteName={SITE_NAME} />
 
       <main className="flex-1 mx-auto w-full max-w-5xl px-4 sm:px-6 py-8 sm:py-10 flex flex-col gap-10">
-        <section className="flex flex-col gap-2">
-          <h1 className="text-2xl sm:text-3xl font-bold text-ink text-balance">งานทั้งหมด</h1>
-          <p className="text-ink-2 max-w-[60ch]">
+        <section className="flex flex-col gap-3">
+          <span
+            className="self-start inline-flex items-center gap-2 px-3 py-1 rounded-[var(--radius-pill)]
+              bg-primary-light text-primary-dark text-xs font-semibold tracking-wide"
+          >
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-[color:var(--color-primary)]" />
+            เปิดรับลงทะเบียนออนไลน์
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-bold text-ink text-balance tracking-tight">
+            งานทั้งหมด
+          </h1>
+          <p className="text-ink-2 max-w-[60ch] text-[15px] sm:text-base">
             เลือกงานที่ต้องการเข้าร่วม เพื่อดูรายละเอียดและลงทะเบียน
+            ระบบจะส่ง QR Code สำหรับเข้างานไปที่อีเมลของคุณ
           </p>
         </section>
 
@@ -91,19 +94,7 @@ export default async function HomePage() {
         )}
       </main>
 
-      <footer className="border-t border-line">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8 flex flex-col sm:flex-row gap-3 sm:items-center justify-between text-sm text-muted">
-          <p>© {currentYear()} {SITE_NAME}</p>
-          <div className="flex gap-5">
-            <Link href="/privacy" className="hover:text-primary-dark">
-              นโยบายความเป็นส่วนตัว
-            </Link>
-            <Link href="/terms" className="hover:text-primary-dark">
-              เงื่อนไขการใช้งาน
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter siteName={SITE_NAME} />
     </div>
   );
 }
@@ -161,7 +152,8 @@ function EventTile({ event }: { event: EventCard }) {
       <Link
         href={`/e/${event.slug}`}
         className="group h-full flex flex-col rounded-[var(--radius-card)] border border-line bg-surface
-          overflow-hidden transition-colors hover:border-primary
+          overflow-hidden transition-all duration-200 hover:border-primary
+          hover:shadow-[0_8px_24px_-12px_rgba(28,23,20,0.25)] hover:-translate-y-0.5
           focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-primary)]"
       >
         {/* แถบสีประจำงาน — ใช้สีที่ผู้ดูแลตั้งไว้ให้แต่ละงานต่างกันได้ */}

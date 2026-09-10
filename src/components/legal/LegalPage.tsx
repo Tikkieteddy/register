@@ -1,6 +1,6 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
-import { currentYear } from "@/lib/datetime";
+import { SiteFooter } from "@/components/site/SiteFooter";
+import { SiteHeader } from "@/components/site/SiteHeader";
 
 /**
  * โครงหน้าเอกสารทางกฎหมาย (นโยบายความเป็นส่วนตัว · เงื่อนไขการใช้งาน)
@@ -20,17 +20,8 @@ export function LegalPage({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-dvh flex flex-col">
-      <header className="border-b border-line bg-surface">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 h-14 flex items-center">
-          <Link
-            href="/"
-            className="font-[family-name:var(--font-display)] font-bold text-ink hover:text-primary-dark"
-          >
-            ระบบรับลงทะเบียนเข้าร่วมงาน
-          </Link>
-        </div>
-      </header>
+    <div className="min-h-dvh flex flex-col bg-bg">
+      <SiteHeader />
 
       <main className="flex-1 mx-auto w-full max-w-3xl px-4 sm:px-6 py-8 sm:py-12">
         <h1 className="text-2xl sm:text-3xl font-bold text-ink text-balance">{title}</h1>
@@ -66,19 +57,7 @@ export function LegalPage({
         </div>
       </main>
 
-      <footer className="border-t border-line">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8 flex flex-col sm:flex-row gap-3 sm:items-center justify-between text-sm text-muted">
-          <p>© {currentYear()} ระบบรับลงทะเบียนเข้าร่วมงาน</p>
-          <div className="flex gap-5">
-            <Link href="/privacy" className="hover:text-primary-dark">
-              นโยบายความเป็นส่วนตัว
-            </Link>
-            <Link href="/terms" className="hover:text-primary-dark">
-              เงื่อนไขการใช้งาน
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
