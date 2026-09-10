@@ -22,13 +22,38 @@ export async function resendAllFailedAction(eventId: string): Promise<EmailActio
   const admin = await getAdminOrNull();
   if (!admin) return { ok: false, message: NOT_ADMIN_MESSAGE };
 
+  /**
+   * ⚠️ ต้องนับแถวที่ค้างสถานะ queued ด้วย ไม่ใช่แค่ failed กับ bounced
+   *
+   *    ตอนส่งอีเมล ระบบจะสร้างแถว queued ไว้ก่อน แล้วค่อยเปลี่ยนเป็น sent
+   *    หรือ failed เมื่อรู้ผล ถ้าเซิร์ฟเวอร์ถูกตัดกลางคัน (เกิดขึ้นได้บน Vercel)
+   *    แถวจะค้างที่ queued ตลอดกาล ไม่มีวันกลายเป็น failed
+   *    เดิมปุ่มนี้มองไม่เห็นแถวพวกนั้นเลย = อีเมลหายเงียบ ๆ โดยไม่มีใครรู้
+   *
+   *    เผื่อเวลาไว้ 10 นาที เพื่อไม่ไปแย่งส่งซ้ำกับฉบับที่กำลังส่งอยู่จริง ๆ ในขณะนั้น
+   *
+   * ⚠️ และต้องข้ามคนที่มีอีเมลฉบับที่ส่งสำเร็จแล้ว
+   *
+   *    การส่งแต่ละครั้งสร้างแถวใหม่เสมอ แถว failed เดิมไม่ได้หายไปไหน
+   *    ถ้าไม่ตรวจตรงนี้ กดปุ่มซ้ำกี่ครั้ง คนกลุ่มเดิมก็จะโดนส่งอีเมลซ้ำทุกครั้ง
+   *    ทั้งที่เขาได้รับไปเรียบร้อยแล้ว
+   */
   const rows = await db.execute<{ registration_id: string }>(sql`
     select distinct el.registration_id
     from email_logs el
     join registrations r on r.id = el.registration_id
     where r.event_id = ${eventId}
-      and el.status in ('failed', 'bounced')
       and r.status <> 'cancelled'
+      and (
+        el.status in ('failed', 'bounced')
+        or (el.status = 'queued' and el.created_at < now() - interval '10 minutes')
+      )
+      and not exists (
+        select 1
+        from email_logs sent_log
+        where sent_log.registration_id = el.registration_id
+          and sent_log.status = 'sent'
+      )
     limit ${MAX_PER_BATCH}
   `);
 

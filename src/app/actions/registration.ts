@@ -3,9 +3,15 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { getEventBySlug, getFormQuestions, getShareLinkByCode } from "@/db/queries";
+import {
+  getEventBySlug,
+  getFormQuestions,
+  getShareLinkByCode,
+  isEventPublic,
+} from "@/db/queries";
 import { eventSessions, seatHolds } from "@/db/schema";
 import { holdSeat, releaseHold } from "@/lib/quota";
+import { checkRateLimit, RATE_LIMITS, rateLimitKey } from "@/lib/rate-limit";
 import { getClientIp, trackLinkEvent } from "@/lib/tracking";
 
 /**
@@ -17,7 +23,18 @@ import { getClientIp, trackLinkEvent } from "@/lib/tracking";
 
 export type HoldSeatResponse =
   | { ok: true; holdToken: string; expiresAt: string; remaining: number }
-  | { ok: false; message: string; remaining: number };
+  | {
+      ok: false;
+      message: string;
+      remaining: number;
+      /**
+       * ถูกปฏิเสธเพราะกดถี่เกินไป ไม่ใช่เพราะที่นั่งเต็ม
+       *
+       * ⚠️ ต้องแยกให้ชัด ไม่งั้นฟอร์มจะเอา remaining ที่ติดมาด้วยไปขึ้นว่า
+       *    "ที่นั่งเต็มแล้ว" ทั้งที่ที่นั่งยังว่างอยู่ แล้วคนจะปิดหน้าเว็บหนีไปเลย
+       */
+      rateLimited?: true;
+    };
 
 /**
  * จองที่นั่งชั่วคราวเมื่อผู้ใช้ติ๊กเลือกช่วงเวลา
@@ -29,6 +46,33 @@ export async function holdSeatAction(
   eventSlug: string,
   sessionId: string,
 ): Promise<HoldSeatResponse> {
+  /**
+   * ⚠️ ด่านนี้ต้องอยู่ก่อนทุกอย่าง และห้ามเอาออก
+   *
+   * การจองที่นั่งไม่ต้องกรอกข้อมูลอะไรเลย ยิงคำสั่งเดียวก็กันที่นั่งไว้ได้ 15 นาที
+   * ถ้าไม่มีด่านนี้ สคริปต์ยิงรัว ๆ ไม่กี่วินาทีจะทำให้ทุกช่วงเวลาขึ้นว่า "เต็มแล้ว"
+   * ทั้งที่ไม่มีใครลงทะเบียนจริงสักคน แล้วยิงซ้ำได้เรื่อย ๆ ทุก 15 นาที
+   *
+   * ด่านจำกัดจำนวนครั้งตอนกดส่งฟอร์มช่วยตรงนี้ไม่ได้ เพราะคนยิงไม่เคยกดส่งฟอร์มเลย
+   */
+  const requestHeaders = await headers();
+  const clientIp = getClientIp(requestHeaders);
+  if (clientIp) {
+    const limit = await checkRateLimit(
+      rateLimitKey("hold", clientIp),
+      RATE_LIMITS.hold.limit,
+      RATE_LIMITS.hold.windowSeconds,
+    );
+    if (!limit.allowed) {
+      return {
+        ok: false,
+        message: "เลือกช่วงเวลาถี่เกินไป กรุณารอสักครู่แล้วลองใหม่อีกครั้ง",
+        remaining: 0,
+        rateLimited: true,
+      };
+    }
+  }
+
   const data = await getEventBySlug(eventSlug);
   if (!data) return { ok: false, message: "ไม่พบงานที่ต้องการ", remaining: 0 };
 
@@ -103,6 +147,29 @@ export async function verifyHoldsAction(
 /** บันทึกว่ามีคนเปิดหน้าฟอร์ม — ใช้ทำกราฟกรวยการแปลง (กราฟที่ 9) */
 export async function trackFormViewAction(eventId: string, shareLinkCode?: string): Promise<void> {
   const h = await headers();
+
+  /**
+   * ⚠️ ฟังก์ชันนี้เปิดให้ยิงเข้ามาได้โดยไม่ต้องล็อกอิน จึงต้องกันสองอย่าง
+   *
+   * ① eventId ต้องเป็นงานที่เผยแพร่แล้วจริง — ไม่ให้ยัด id มั่ว ๆ
+   *    มาสร้างแถวขยะที่ไม่ผูกกับงานไหนเลย
+   * ② จำกัดจำนวนครั้งต่อที่อยู่เครือข่าย — ไม่งั้นกราฟกรวยการแปลงในหน้ารายงาน
+   *    ถูกปั่นให้เพี้ยนได้ และตาราง link_events จะบวมจนกินโควตาฐานข้อมูล
+   *
+   * เงียบเสมอเมื่อไม่ผ่าน เพราะนี่เป็นแค่การเก็บสถิติ ห้ามทำให้ผู้ใช้กรอกฟอร์มไม่ได้
+   */
+  const clientIp = getClientIp(h);
+  if (clientIp) {
+    const limit = await checkRateLimit(
+      rateLimitKey("track", clientIp),
+      RATE_LIMITS.track.limit,
+      RATE_LIMITS.track.windowSeconds,
+    );
+    if (!limit.allowed) return;
+  }
+
+  if (!(await isEventPublic(eventId))) return;
+
   let shareLinkId: string | null = null;
 
   if (shareLinkCode) {
@@ -114,7 +181,7 @@ export async function trackFormViewAction(eventId: string, shareLinkCode?: strin
     eventId,
     action: "view_form",
     shareLinkId,
-    ip: getClientIp(h),
+    ip: clientIp,
     userAgent: h.get("user-agent"),
     referrer: h.get("referer"),
     country: h.get("cf-ipcountry"),
@@ -123,6 +190,9 @@ export async function trackFormViewAction(eventId: string, shareLinkCode?: strin
 
 /** ใช้ตอนตรวจคำตอบฝั่งเซิร์ฟเวอร์ — ดึงกติกาของคำถามจากฐานข้อมูล ไม่เชื่อค่าจาก client */
 export async function getQuestionRulesAction(eventId: string) {
+  // งานที่ยังเป็นฉบับร่างต้องไม่ถูกอ่านคำถามออกไปก่อนวันประกาศ
+  if (!(await isEventPublic(eventId))) return [];
+
   const questions = await getFormQuestions(eventId);
   return questions.map((q) => ({
     id: q.id,

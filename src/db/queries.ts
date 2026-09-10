@@ -249,3 +249,18 @@ export async function getFeaturedEvent(): Promise<{ slug: string; nameTh: string
     return null;
   }
 }
+
+/**
+ * งานนี้เปิดให้คนทั่วไปเห็นแล้วหรือยัง
+ *
+ * ใช้เป็นด่านของ Server Action และ API ที่เปิดสาธารณะและรับ eventId ตรง ๆ
+ * ถ้าไม่ตรวจ คนนอกจะเดา eventId แล้วดึงข้อมูลของงานที่ยังเป็นฉบับร่าง
+ * (คำถามในฟอร์ม ชื่อช่วงเวลา) ออกไปได้ก่อนวันประกาศงาน
+ */
+export async function isEventPublic(eventId: string): Promise<boolean> {
+  const [row] = await db
+    .select({ status: events.status })
+    .from(events)
+    .where(eq(events.id, eventId));
+  return row?.status === "published" || row?.status === "closed";
+}

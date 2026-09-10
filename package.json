@@ -16,7 +16,7 @@
     "db:seed": "tsx src/db/seed.ts",
     "lint:fix": "eslint . --fix",
     "user:password": "tsx scripts/set-password.ts",
-    "test:e2e": "node tests/e2e-register-flow.mjs && node tests/e2e-full-flow.mjs && node tests/e2e-staff-flow.mjs && node tests/e2e-offline-sync.mjs && node tests/e2e-admin-flow.mjs && node tests/e2e-admin-media.mjs && node tests/e2e-multi-event.mjs && node tests/e2e-security.mjs",
+    "test:e2e": "node tests/e2e-register-flow.mjs && node tests/e2e-full-flow.mjs && node tests/e2e-staff-flow.mjs && node tests/e2e-offline-sync.mjs && node tests/e2e-admin-flow.mjs && node tests/e2e-admin-media.mjs && node tests/e2e-multi-event.mjs && node tests/e2e-audit-fixes.mjs && node tests/e2e-security.mjs",
     "db:demo": "tsx scripts/demo-data.ts",
     "db:reset-demo": "tsx scripts/reset-demo.ts",
     "check:deploy": "tsx scripts/check-deploy.ts",

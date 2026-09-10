@@ -22,6 +22,13 @@
       "when": 1789018386696,
       "tag": "0002_add_data_retention",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789032453877,
+      "tag": "0003_cancelled_can_register_again",
+      "breakpoints": true
     }
   ]
 }

@@ -24,6 +24,17 @@ type Props = {
 
 export const metadata: Metadata = { title: "ลงทะเบียน" };
 
+/**
+ * เผื่อเวลาให้ Server Action ของหน้านี้ทำงานได้เต็ม 60 วินาที
+ *
+ * หลังบันทึกการลงทะเบียนเสร็จ ระบบยังต้องส่งอีเมลยืนยันต่อด้วย after()
+ * ซึ่งนับรวมอยู่ในเวลาของฟังก์ชันเดียวกัน ถ้าใช้ค่าเริ่มต้นที่สั้นกว่านี้
+ * งานส่งอีเมลจะถูกตัดกลางคันเวลาผู้ให้บริการอีเมลตอบช้า
+ *
+ * 60 วินาทีเป็นเพดานสูงสุดของ Vercel แพ็กเกจฟรี ขอมากกว่านี้ไม่ได้
+ */
+export const maxDuration = 60;
+
 export default async function RegisterPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const { lang, ref, utm_source, utm_medium, utm_campaign } = await searchParams;

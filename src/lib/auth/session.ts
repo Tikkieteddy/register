@@ -1,5 +1,9 @@
+import { eq } from "drizzle-orm";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { cache } from "react";
+import { db } from "@/db";
+import { users } from "@/db/schema";
 import { getServerEnv } from "@/lib/env";
 
 /**
@@ -64,16 +68,29 @@ export async function destroySession(): Promise<void> {
   store.delete(COOKIE_NAME);
 }
 
-/** อ่าน session ปัจจุบัน คืน null ถ้ายังไม่ล็อกอินหรือหมดอายุ */
-export async function getSession(): Promise<SessionUser | null> {
+/**
+ * อ่าน session ปัจจุบัน คืน null ถ้ายังไม่ล็อกอินหรือหมดอายุ
+ *
+ * ⚠️ ต้องยืนยันสิทธิ์กับฐานข้อมูลซ้ำทุกครั้ง ห้ามเชื่อค่าที่อยู่ในโทเคนอย่างเดียว
+ *
+ *    โทเคนมีอายุ 8–24 ชั่วโมง และแก้ไขไม่ได้หลังออกไปแล้ว ถ้าเชื่อค่าในโทเคน
+ *    ล้วน ๆ เวลาผู้ดูแลปิดบัญชีเจ้าหน้าที่กลางงาน (ทำของหาย ลาออกกะทันหัน
+ *    หรือลดสิทธิ์จาก admin เป็น staff) คนนั้นจะยังใช้งานต่อได้อีกจนถึงเช้าวันรุ่งขึ้น
+ *    ซึ่งเป็นช่องโหว่ที่ผู้ดูแลปิดเองไม่ได้เลย
+ *
+ *    ใช้ cache() ของ React ครอบไว้ เพื่อให้หนึ่งคำขอเรียกฐานข้อมูลแค่ครั้งเดียว
+ *    แม้จะมีหลายส่วนของหน้าเรียก getSession() ก็ตาม
+ */
+export const getSession = cache(async function getSession(): Promise<SessionUser | null> {
   const store = await cookies();
   const token = store.get(COOKIE_NAME)?.value;
   if (!token) return null;
 
+  let claims: SessionUser;
   try {
     const { payload } = await jwtVerify(token, getSecret());
     if (!payload.sub) return null;
-    return {
+    claims = {
       id: payload.sub,
       email: String(payload.email ?? ""),
       fullName: String(payload.fullName ?? ""),
@@ -84,7 +101,42 @@ export async function getSession(): Promise<SessionUser | null> {
     // โทเคนหมดอายุหรือถูกแก้ไข — ถือว่ายังไม่ได้ล็อกอิน
     return null;
   }
-}
+
+  try {
+    const [row] = await db
+      .select({
+        email: users.email,
+        fullName: users.fullName,
+        role: users.role,
+        canScan: users.canScan,
+        isActive: users.isActive,
+      })
+      .from(users)
+      .where(eq(users.id, claims.id));
+
+    // บัญชีถูกลบหรือถูกปิดไปแล้ว — ตัดสิทธิ์ทันที ไม่ต้องรอโทเคนหมดอายุ
+    if (!row || !row.isActive) return null;
+
+    // ใช้สิทธิ์ล่าสุดจากฐานข้อมูลเสมอ ไม่ใช่สิทธิ์ ณ วันที่ล็อกอิน
+    return {
+      id: claims.id,
+      email: row.email,
+      fullName: row.fullName,
+      role: row.role,
+      canScan: row.canScan,
+    };
+  } catch (error) {
+    /**
+     * ต่อฐานข้อมูลไม่ได้ชั่วคราว — ใช้ค่าในโทเคนไปก่อน
+     *
+     * ตรงนี้ไม่ได้ "เปิดประตูให้คนใหม่" เพราะโทเคนผ่านการตรวจลายเซ็นมาแล้ว
+     * แต่การเด้งเจ้าหน้าที่ทั้งทีมออกจากระบบกลางงานเพราะฐานข้อมูลสะดุดไปสองวินาที
+     * เสียหายมากกว่ามาก
+     */
+    console.error("[auth] ตรวจสอบสิทธิ์กับฐานข้อมูลไม่สำเร็จ ใช้ค่าในโทเคนแทน:", error);
+    return claims;
+  }
+});
 
 /**
  * สิทธิ์เข้าหน้าสแกน QR

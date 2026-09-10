@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   bigserial,
   boolean,
@@ -58,8 +59,16 @@ export const registrations = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    /** กันลงทะเบียนซ้ำด้วยอีเมลเดิมในงานเดียวกัน */
-    uniqueIndex("registrations_event_email_uq").on(t.eventId, t.email),
+    /**
+     * กันลงทะเบียนซ้ำด้วยอีเมลเดิมในงานเดียวกัน
+     *
+     * ⚠️ ไม่นับรายการที่ถูกยกเลิกไปแล้ว
+     *    ถ้านับด้วย คนที่แจ้งยกเลิกไว้แล้วเปลี่ยนใจกลับมา จะลงทะเบียนใหม่ไม่ได้อีกเลย
+     *    ตลอดกาล และไม่มีใครแก้ให้ได้นอกจากเข้าไปลบแถวในฐานข้อมูลโดยตรง
+     */
+    uniqueIndex("registrations_event_email_uq")
+      .on(t.eventId, t.email)
+      .where(sql`${t.status} <> 'cancelled'`),
     uniqueIndex("registrations_code_uq").on(t.registrationCode),
     index("registrations_event_status_idx").on(t.eventId, t.status),
     index("registrations_phone_idx").on(t.phone),

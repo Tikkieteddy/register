@@ -218,10 +218,19 @@ export function RegistrationForm({
         // ② เซิร์ฟเวอร์ปฏิเสธ — ย้อนสถานะกลับ
         setSelectedSessions((s) => s.filter((id) => id !== sessionId));
         setBanner(result.message);
-        setSeatState((s) => ({
-          ...s,
-          [sessionId]: { remaining: result.remaining, full: result.remaining <= 0 },
-        }));
+        /**
+         * ⚠️ ถ้าถูกปฏิเสธเพราะกดถี่เกินไป ห้ามแตะตัวเลขที่นั่งเด็ดขาด
+         *
+         * กรณีนั้นเซิร์ฟเวอร์ไม่ได้ไปนับที่นั่งให้เลย ค่าที่ติดมาจึงเป็น 0 เสมอ
+         * ถ้าเอามาใช้ ช่องนั้นจะขึ้นว่า "เต็มแล้ว" และกดไม่ได้อีกจนกว่าจะรีโหลดหน้า
+         * ทั้งที่ที่นั่งยังว่างอยู่ — คนจะเข้าใจผิดแล้วปิดหน้าเว็บหนีไปเลย
+         */
+        if (!result.rateLimited) {
+          setSeatState((s) => ({
+            ...s,
+            [sessionId]: { remaining: result.remaining, full: result.remaining <= 0 },
+          }));
+        }
         return;
       }
 

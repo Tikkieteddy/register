@@ -1,7 +1,8 @@
 "use server";
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import { headers } from "next/headers";
+import { after } from "next/server";
 import { db } from "@/db";
 import { getEventBySlug, getFormQuestions, getShareLinkByCode } from "@/db/queries";
 import {
@@ -125,10 +126,20 @@ export async function submitRegistrationAction(rawInput: unknown): Promise<Submi
   if (Object.keys(fieldErrors).length > 0) return { ok: false, fieldErrors };
 
   // ---------- ④ ตรวจอีเมลซ้ำ ----------
+  /**
+   * ไม่นับรายการที่ถูกยกเลิกไปแล้ว — คนที่เคยแจ้งยกเลิกต้องกลับมาลงใหม่ได้
+   * (ต้องตรงกับเงื่อนไขของ index registrations_event_email_uq ในฐานข้อมูลเสมอ)
+   */
   const existing = await db
     .select({ id: registrations.id })
     .from(registrations)
-    .where(and(eq(registrations.eventId, event.id), eq(registrations.email, input.email)));
+    .where(
+      and(
+        eq(registrations.eventId, event.id),
+        eq(registrations.email, input.email),
+        ne(registrations.status, "cancelled"),
+      ),
+    );
 
   if (existing.length > 0) {
     return {
@@ -303,9 +314,25 @@ export async function submitRegistrationAction(rawInput: unknown): Promise<Submi
   }
 
   // ---------- ⑦ เข้าคิวส่งอีเมล โดยไม่ให้ผู้ใช้ต้องรอ ----------
-  // ผู้ใช้ได้ตั๋วแล้วตั้งแต่ขั้นที่ ⑥ อีเมลเป็นของแถม ไม่ใช่ทางเดียว (หัวข้อ 8.2)
-  void sendConfirmationEmail(created.registrationId).catch((error: unknown) => {
-    console.error("[submit] ส่งอีเมลยืนยันไม่สำเร็จ:", error);
+  /**
+   * ผู้ใช้ได้ตั๋วแล้วตั้งแต่ขั้นที่ ⑥ อีเมลเป็นของแถม ไม่ใช่ทางเดียว (หัวข้อ 8.2)
+   *
+   * ⚠️ ต้องใช้ after() ห้ามเรียกแบบ void แล้วปล่อยลอย ๆ
+   *
+   *    เดิมเขียนเป็น void sendConfirmationEmail(...) ซึ่งทำงานถูกตอนรันในเครื่อง
+   *    แต่บน Vercel จะพังเงียบ ๆ เพราะเซิร์ฟเวอร์ "แช่แข็ง" เครื่องทันทีที่ตอบผู้ใช้ไปแล้ว
+   *    งานที่ยังค้างอยู่จึงถูกหั่นกลางคัน — คนลงทะเบียนไม่ได้รับ QR
+   *    และแอดมินมองไม่เห็นด้วยว่ามีปัญหา เพราะแถวใน email_logs ค้างที่ queued
+   *
+   *    after() เป็นวิธีที่ Next.js เตรียมไว้ให้บอกว่า "ตอบผู้ใช้ไปก่อน
+   *    แต่ยังมีงานต้องทำต่อ อย่าเพิ่งปิดเครื่อง"
+   */
+  after(async () => {
+    try {
+      await sendConfirmationEmail(created.registrationId);
+    } catch (error) {
+      console.error("[submit] ส่งอีเมลยืนยันไม่สำเร็จ:", error);
+    }
   });
 
   return { ok: true, registrationCode, ticketToken: created.ticketToken };

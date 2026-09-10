@@ -1,11 +1,10 @@
 "use server";
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import {
   consents,
-  eventSessions,
   registrationSessions,
   registrations,
   tickets,
@@ -138,7 +137,14 @@ export async function updateRegistrationAction(input: {
     const clash = await db
       .select({ id: registrations.id })
       .from(registrations)
-      .where(and(eq(registrations.eventId, before.eventId), eq(registrations.email, nextEmail)));
+      .where(
+        and(
+          eq(registrations.eventId, before.eventId),
+          eq(registrations.email, nextEmail),
+          // รายการที่ยกเลิกแล้วไม่ถือว่าซ้ำ — ตรงกับเงื่อนไขของ index ในฐานข้อมูล
+          ne(registrations.status, "cancelled"),
+        ),
+      );
     if (clash.length > 0) {
       return {
         ok: false,
@@ -315,7 +321,12 @@ export async function createRegistrationAction(input: {
     .select({ id: registrations.id })
     .from(registrations)
     .where(
-      and(eq(registrations.eventId, input.eventId), eq(registrations.email, normalizedEmail)),
+      and(
+        eq(registrations.eventId, input.eventId),
+        eq(registrations.email, normalizedEmail),
+        // รายการที่ยกเลิกแล้วไม่ถือว่าซ้ำ — ตรงกับเงื่อนไขของ index ในฐานข้อมูล
+        ne(registrations.status, "cancelled"),
+      ),
     );
   if (existing.length > 0) {
     return {
@@ -459,11 +470,3 @@ export async function anonymizeRegistrationAction(id: string): Promise<ActionRes
   return { ok: true, message: "ลบข้อมูลส่วนบุคคลเรียบร้อย สถิติในรายงานยังคงเดิม" };
 }
 
-/** ใช้ในหน้ารายละเอียดเพื่อโหลดช่วงเวลาทั้งหมดของงาน */
-export async function listEventSessions(eventId: string) {
-  return db
-    .select({ id: eventSessions.id, nameTh: eventSessions.nameTh })
-    .from(eventSessions)
-    .where(eq(eventSessions.eventId, eventId))
-    .orderBy(eventSessions.sortOrder);
-}

@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { getEventBySlug } from "@/db/queries";
@@ -86,7 +86,14 @@ export async function walkInAction(input: {
     const existing = await db
       .select({ id: registrations.id })
       .from(registrations)
-      .where(and(eq(registrations.eventId, data.event.id), eq(registrations.email, email)));
+      .where(
+        and(
+          eq(registrations.eventId, data.event.id),
+          eq(registrations.email, email),
+          // รายการที่ยกเลิกแล้วไม่ถือว่าซ้ำ — ตรงกับเงื่อนไขของ index ในฐานข้อมูล
+          ne(registrations.status, "cancelled"),
+        ),
+      );
     if (existing.length > 0) {
       return {
         ok: false,
