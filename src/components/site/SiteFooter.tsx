@@ -7,7 +7,14 @@ import { currentYear } from "@/lib/datetime";
  * ต้องมีลิงก์นโยบายความเป็นส่วนตัวทุกหน้าที่เก็บข้อมูลส่วนบุคคล
  * เป็นข้อกำหนดของ PDPA ไม่ใช่แค่ความสวยงาม
  */
-export function SiteFooter({ siteName = "ระบบรับลงทะเบียนเข้าร่วมงาน" }: { siteName?: string }) {
+export function SiteFooter({
+  siteName = "ระบบรับลงทะเบียนเข้าร่วมงาน",
+  eventSlug,
+}: {
+  siteName?: string;
+  /** งานที่จะให้ลิงก์หน้างานชี้ไป — ไม่ส่งมาก็ซ่อนลิงก์นั้น (ระบบรองรับหลายงาน) */
+  eventSlug?: string | null;
+}) {
   return (
     <footer className="mt-auto border-t border-line bg-surface">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8 flex flex-col sm:flex-row gap-4 sm:items-center justify-between">
@@ -18,6 +25,22 @@ export function SiteFooter({ siteName = "ระบบรับลงทะเบ
           <Link href="/" className="text-ink-2 hover:text-primary-dark transition-colors">
             งานทั้งหมด
           </Link>
+          {eventSlug && (
+            <>
+              <Link
+                href={`/e/${eventSlug}`}
+                className="text-ink-2 hover:text-primary-dark transition-colors"
+              >
+                รายละเอียดงาน
+              </Link>
+              <Link
+                href={`/e/${eventSlug}/register`}
+                className="text-ink-2 hover:text-primary-dark transition-colors"
+              >
+                ลงทะเบียน
+              </Link>
+            </>
+          )}
           <Link href="/privacy" className="text-ink-2 hover:text-primary-dark transition-colors">
             นโยบายความเป็นส่วนตัว
           </Link>

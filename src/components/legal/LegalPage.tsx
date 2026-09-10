@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
+import { getFeaturedEvent } from "@/db/queries";
 
 /**
  * โครงหน้าเอกสารทางกฎหมาย (นโยบายความเป็นส่วนตัว · เงื่อนไขการใช้งาน)
@@ -8,7 +9,7 @@ import { SiteHeader } from "@/components/site/SiteHeader";
  * แยกออกมาเพราะทั้งสองหน้าต้องหน้าตาเหมือนกันเป๊ะ และต้องอ่านง่ายบนมือถือ
  * ผู้ลงทะเบียนส่วนใหญ่กดเข้ามาจากลิงก์ในฟอร์มระหว่างกรอกข้อมูลบนมือถือ
  */
-export function LegalPage({
+export async function LegalPage({
   title,
   updatedAt,
   version,
@@ -19,9 +20,12 @@ export function LegalPage({
   version?: string;
   children: ReactNode;
 }) {
+  // ดึงงานที่เปิดรับอยู่ เพื่อให้เมนูมีลิงก์ครบเหมือนหน้าอื่น
+  const featured = await getFeaturedEvent();
+
   return (
     <div className="min-h-dvh flex flex-col bg-bg">
-      <SiteHeader />
+      <SiteHeader eventSlug={featured?.slug} />
 
       <main className="flex-1 mx-auto w-full max-w-3xl px-4 sm:px-6 py-8 sm:py-12">
         <h1 className="text-2xl sm:text-3xl font-bold text-ink text-balance">{title}</h1>
@@ -57,7 +61,7 @@ export function LegalPage({
         </div>
       </main>
 
-      <SiteFooter />
+      <SiteFooter eventSlug={featured?.slug} />
     </div>
   );
 }

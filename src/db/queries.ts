@@ -218,3 +218,21 @@ export async function getShareLinkByCode(code: string) {
     .where(and(eq(shareLinks.code, code), eq(shareLinks.isActive, true)));
   return link ?? null;
 }
+
+/**
+ * งานที่จะใช้เป็นตัวแทนในแถบเมนู
+ *
+ * แถบเมนูต้องมีลิงก์ "รายละเอียดงาน" กับ "ลงทะเบียน" ด้วย
+ * แต่ลิงก์สองอันนี้ผูกกับงานใดงานหนึ่งเสมอ ไม่ใช่ลิงก์กลางของทั้งเว็บ
+ *
+ * ⚠️ ถ้ามีงานเปิดรับพร้อมกันหลายงาน จะไม่เดาให้ว่าหมายถึงงานไหน
+ *    เพราะการพาไปผิดงานแย่กว่าการไม่มีลิงก์ — คนอาจลงทะเบียนผิดงานโดยไม่รู้ตัว
+ *    กรณีนั้นให้เลือกจากหน้าแรกซึ่งเป็นหน้ารวมงานอยู่แล้ว
+ */
+export async function getFeaturedEvent(): Promise<{ slug: string; nameTh: string } | null> {
+  const open = (await listPublishedEvents()).filter(
+    (event) => !event.hasEnded && event.registrationState === "open",
+  );
+  const only = open.length === 1 ? open[0] : undefined;
+  return only ? { slug: only.slug, nameTh: only.nameTh } : null;
+}

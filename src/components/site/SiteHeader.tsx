@@ -15,15 +15,36 @@ import { useState } from "react";
  *    ผู้เข้าร่วมงานเกินครึ่งเปิดจากมือถือ ถ้าเข้าเมนูไม่ได้ก็เท่ากับไม่มีเมนู
  */
 
-/** ลิงก์ที่คนทั่วไปเข้าได้ทั้งหมด — คุมไว้ที่เดียว เพิ่มหน้าใหม่แล้วขึ้นทุกหน้าพร้อมกัน */
-const PUBLIC_LINKS = [
-  { href: "/", label: "งานทั้งหมด" },
-  { href: "/privacy", label: "ความเป็นส่วนตัว" },
-  { href: "/terms", label: "เงื่อนไขการใช้งาน" },
-] as const;
+/**
+ * ลิงก์ที่คนทั่วไปเข้าได้ทั้งหมด — คุมไว้ที่เดียว เพิ่มหน้าใหม่แล้วขึ้นทุกหน้าพร้อมกัน
+ *
+ * ลิงก์ "รายละเอียดงาน" กับ "ลงทะเบียน" ผูกกับงานใดงานหนึ่ง จึงต้องสร้างตอนใช้งาน
+ * ไม่ใช่เขียนตายตัวไว้ที่นี่ ระบบรองรับหลายงานพร้อมกัน
+ */
+function buildLinks(eventSlug?: string | null) {
+  return [
+    { href: "/", label: "งานทั้งหมด" },
+    ...(eventSlug
+      ? [
+          { href: `/e/${eventSlug}`, label: "รายละเอียดงาน" },
+          { href: `/e/${eventSlug}/register`, label: "ลงทะเบียน" },
+        ]
+      : []),
+    { href: "/privacy", label: "ความเป็นส่วนตัว" },
+    { href: "/terms", label: "เงื่อนไขการใช้งาน" },
+  ];
+}
 
-export function SiteHeader({ siteName = "ระบบรับลงทะเบียนเข้าร่วมงาน" }: { siteName?: string }) {
+export function SiteHeader({
+  siteName = "ระบบรับลงทะเบียนเข้าร่วมงาน",
+  eventSlug,
+}: {
+  siteName?: string;
+  /** งานที่จะให้ลิงก์ "รายละเอียดงาน" และ "ลงทะเบียน" ชี้ไป — ไม่ส่งมาก็ซ่อนสองลิงก์นั้น */
+  eventSlug?: string | null;
+}) {
   const pathname = usePathname() ?? "/";
+  const links = buildLinks(eventSlug);
   const [open, setOpen] = useState(false);
   const [openedOn, setOpenedOn] = useState(pathname);
 
@@ -38,7 +59,15 @@ export function SiteHeader({ siteName = "ระบบรับลงทะเบ
     setOpen(false);
   }
 
-  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+  /**
+   * หน้ารายละเอียดงานกับหน้าฟอร์มมี path ซ้อนกัน (/e/x กับ /e/x/register)
+   * ถ้าใช้ startsWith อย่างเดียว ตอนอยู่หน้าฟอร์มจะไฮไลต์ทั้งสองปุ่มพร้อมกัน
+   * จึงเทียบแบบตรงตัวสำหรับลิงก์ที่ชี้ไปหน้างานโดยเฉพาะ
+   */
+  const isActive = (href: string) => {
+    if (href === "/" || href.startsWith("/e/")) return pathname === href;
+    return pathname.startsWith(href);
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-[color:var(--color-surface)]/85 backdrop-blur-md">
@@ -60,7 +89,7 @@ export function SiteHeader({ siteName = "ระบบรับลงทะเบ
           </Link>
 
           <nav className="hidden md:flex items-center gap-1 ms-auto" aria-label="เมนูหลัก">
-            {PUBLIC_LINKS.map((link) => (
+            {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -108,7 +137,7 @@ export function SiteHeader({ siteName = "ระบบรับลงทะเบ
           aria-label="เมนูหลัก (มือถือ)"
           className="md:hidden pb-3 flex flex-col gap-1"
         >
-          {PUBLIC_LINKS.map((link) => (
+          {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { trackFormViewAction } from "@/app/actions/registration";
+import { SiteHeader } from "@/components/site/SiteHeader";
 import { RegistrationForm } from "@/components/form/RegistrationForm";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Stepper } from "@/components/ui/Stepper";
@@ -49,13 +49,7 @@ export default async function RegisterPage({ params, searchParams }: Props) {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-line bg-surface">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 h-14 flex items-center">
-          <Link href={`/e/${slug}`} className="font-[family-name:var(--font-display)] font-bold text-ink">
-            {event.organizerName ?? name}
-          </Link>
-        </div>
-      </header>
+      <SiteHeader siteName={event.organizerName ?? name} eventSlug={slug} />
 
       <main className="mx-auto max-w-5xl px-4 sm:px-6 py-6 flex flex-col gap-6">
         <Stepper current={2} dict={dict} />

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
-import { listPublishedEvents, type EventCard, type RegistrationState } from "@/db/queries";
+import { getFeaturedEvent, listPublishedEvents, type EventCard, type RegistrationState } from "@/db/queries";
 import { formatDateRange, formatTimeRange } from "@/lib/datetime";
 
 /**
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const events = await listPublishedEvents();
+  const [events, featured] = await Promise.all([listPublishedEvents(), getFeaturedEvent()]);
 
   const upcoming = events
     .filter((event) => !event.hasEnded)
@@ -36,7 +36,7 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-dvh flex flex-col bg-bg">
-      <SiteHeader siteName={SITE_NAME} />
+      <SiteHeader siteName={SITE_NAME} eventSlug={featured?.slug} />
 
       <main className="flex-1 mx-auto w-full max-w-5xl px-4 sm:px-6 py-8 sm:py-10 flex flex-col gap-10">
         <section className="flex flex-col gap-3">
@@ -94,7 +94,7 @@ export default async function HomePage() {
         )}
       </main>
 
-      <SiteFooter siteName={SITE_NAME} />
+      <SiteFooter siteName={SITE_NAME} eventSlug={featured?.slug} />
     </div>
   );
 }

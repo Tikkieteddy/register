@@ -90,7 +90,7 @@ export default async function EventLandingPage({ params, searchParams }: Props) 
   return (
     <div className="min-h-screen">
       {/* ① แถบเมนูหลัก ใช้ร่วมกับทุกหน้าฝั่งผู้เข้าร่วมงาน */}
-      <SiteHeader siteName={event.organizerName ?? name} />
+      <SiteHeader siteName={event.organizerName ?? name} eventSlug={slug} />
 
       {/* แถบลัดไปแต่ละส่วนของหน้านี้ — แยกจากเมนูหลักเพราะเป็นลิงก์เฉพาะหน้านี้ */}
       <div className="border-b border-line bg-surface">
