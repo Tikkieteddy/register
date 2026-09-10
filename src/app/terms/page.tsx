@@ -14,6 +14,17 @@ export const metadata: Metadata = {
   description: "กติกาการลงทะเบียน การใช้บัตรเข้างาน การยกเลิก และข้อจำกัดความรับผิด",
 };
 
+/**
+ * ⚠️ ห้ามให้หน้านี้ถูกสร้างเป็นไฟล์นิ่งตอน build
+ *
+ * เมนูดึงชื่องานที่เปิดรับอยู่จากฐานข้อมูล ถ้า prerender ตอน build
+ * ลิงก์ในเมนูจะถูกแช่แข็งเป็นงานที่เปิดอยู่ ณ วันที่ deploy
+ * พอเปลี่ยนไปจัดงานใหม่ เมนูจะยังพาไปงานเก่าจนกว่าจะ deploy อีกครั้ง
+ *
+ * และตอน build บน CI ไม่มีฐานข้อมูลให้ต่อ การ prerender จึงทำให้ build ล้ม
+ */
+export const dynamic = "force-dynamic";
+
 export default function TermsPage() {
   return (
     <LegalPage title="เงื่อนไขการใช้งาน" updatedAt="9 กันยายน 2569" version="1.0">

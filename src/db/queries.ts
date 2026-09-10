@@ -230,9 +230,22 @@ export async function getShareLinkByCode(code: string) {
  *    กรณีนั้นให้เลือกจากหน้าแรกซึ่งเป็นหน้ารวมงานอยู่แล้ว
  */
 export async function getFeaturedEvent(): Promise<{ slug: string; nameTh: string } | null> {
-  const open = (await listPublishedEvents()).filter(
-    (event) => !event.hasEnded && event.registrationState === "open",
-  );
-  const only = open.length === 1 ? open[0] : undefined;
-  return only ? { slug: only.slug, nameTh: only.nameTh } : null;
+  try {
+    const open = (await listPublishedEvents()).filter(
+      (event) => !event.hasEnded && event.registrationState === "open",
+    );
+    const only = open.length === 1 ? open[0] : undefined;
+    return only ? { slug: only.slug, nameTh: only.nameTh } : null;
+  } catch {
+    /**
+     * ⚠️ ต่อฐานข้อมูลไม่ได้ ให้คืน null แทนการโยน error ต่อ
+     *
+     * ค่านี้ใช้แค่เติมลิงก์ 2 อันในเมนูเท่านั้น ไม่ใช่เนื้อหาหลักของหน้า
+     * หน้านโยบายความเป็นส่วนตัวต้องเปิดได้เสมอตามข้อกำหนด PDPA
+     * การล้มทั้งหน้าเพราะลิงก์ในเมนูหายไปสองอัน เสียหายมากกว่ามาก
+     *
+     * กรณีที่เกิดจริง: ตอน build บน CI ซึ่งไม่มีฐานข้อมูลให้ต่อ
+     */
+    return null;
+  }
 }
