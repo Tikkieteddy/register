@@ -12,7 +12,7 @@
 @theme {
   /* --- สี CI หลัก --- */
   --color-primary: #ec5f27;
-  --color-primary-dark: #c94a18;   /* สำหรับ hover / active */
+  --color-primary-dark: #be4515;   /* สำหรับ hover / active */
   --color-primary-light: #fff1ea;  /* สำหรับพื้นหลังอ่อน */
   --color-primary-contrast: #ffffff;
 
@@ -22,9 +22,9 @@
   --color-surface-2: #f6f1ec;
   --color-ink: #1c1714;
   --color-ink-2: #4a423c;
-  --color-muted: #857a71;
+  --color-muted: #7c7168;
   --color-line: #e7dfd7;
-  --color-line-strong: #d6ccc2;
+  --color-line-strong: #95897b;
 
   /* --- สีสถานะ (ใช้เฉพาะบอกสถานะ ไม่ใช้ตกแต่ง) --- */
   --color-success: #2e7d4f;
@@ -32,7 +32,7 @@
   --color-warning: #9a6b08;
   --color-warning-bg: #fdf3de;
   /* โทนแดงมาตรฐานสำหรับ error — ตั้งใจแยกไม่ให้ปนกับสีส้ม CI */
-  --color-danger: #d32f2f;
+  --color-danger: #c62828;
   --color-danger-bg: #fdeded;
   --color-danger-border: #f0b4b4;
 
@@ -78,4 +78,24 @@ h1, h2, h3, h4 {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/**
+ * ตัวหนังสือบนปุ่มสีธีม — บังคับให้เข้าเกณฑ์ WCAG AA
+ *
+ * สีส้มแบรนด์ #EC5F27 กับตัวหนังสือขาว ได้ค่าความต่างของสี 3.37 : 1
+ * ซึ่งไม่ผ่านเกณฑ์ของ "ตัวหนังสือขนาดปกติ" (ต้องได้ 4.5 : 1)
+ * แต่ผ่านเกณฑ์ของ "ตัวหนังสือขนาดใหญ่" (ต้องได้ 3 : 1)
+ *
+ * WCAG นับว่าใหญ่เมื่อ ≥ 18.66px และเป็นตัวหนา จึงกำหนดไว้ที่ 19px ตัวหนา
+ * วิธีนี้รักษาสีแบรนด์ไว้ได้ครบโดยไม่ต้องเปลี่ยนเฉดสี ตามที่ผู้จัดงานเลือก
+ *
+ * ⚠️ เขียนเป็นกฎรวมที่นี่แทนการไล่แก้ทีละไฟล์ (มี 21 ไฟล์ที่ใช้ปุ่มแบบนี้)
+ *    ถ้าไล่แก้ทีละที่ วันหน้าคนเพิ่มปุ่มใหม่จะลืม แล้วเว็บจะกลับไปไม่ผ่านเกณฑ์อีก
+ *    กฎนี้ครอบคลุมปุ่มที่มีอยู่และปุ่มที่จะเพิ่มในอนาคตโดยอัตโนมัติ
+ */
+.bg-primary.text-primary-contrast {
+  font-size: 1.1875rem; /* 19px */
+  font-weight: 700;
+  line-height: 1.4;
 }

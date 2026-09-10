@@ -114,7 +114,7 @@ export default async function SettingsPage({
       {active === "quota" ? await renderQuota(event) : null}
       {active === "questions" ? await renderQuestions(event.id) : null}
       {active === "users" ? await renderUsers(admin.id) : null}
-      {active === "privacy" ? await renderPrivacy(event.id, event.privacyPolicyVersion) : null}
+      {active === "privacy" ? await renderPrivacy(event.id, event.privacyPolicyVersion, event.dataRetentionDays) : null}
     </div>
   );
 }
@@ -234,7 +234,11 @@ async function renderUsers(currentUserId: string) {
   return <UsersPanel users={list} currentUserId={currentUserId} />;
 }
 
-async function renderPrivacy(eventId: string, policyVersion: string) {
+async function renderPrivacy(
+  eventId: string,
+  policyVersion: string,
+  dataRetentionDays: number | null,
+) {
   const rows = await db.execute<{ type: string; granted: number; total: number }>(sql`
     select c.type::text as type,
            count(*) filter (where c.is_granted)::int as granted,
@@ -250,6 +254,7 @@ async function renderPrivacy(eventId: string, policyVersion: string) {
     <PrivacyForm
       eventId={eventId}
       policyVersion={policyVersion}
+      dataRetentionDays={dataRetentionDays}
       consentSummary={rows.map((row) => ({
         type: row.type,
         label: CONSENT_LABEL[row.type] ?? row.type,

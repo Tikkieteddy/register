@@ -89,3 +89,20 @@ export const calendarSyncs = pgTable(
   },
   (t) => [index("calendar_syncs_registration_idx").on(t.registrationId)],
 );
+
+/**
+ * ตารางที่ 21 — ตัวนับสำหรับจำกัดจำนวนครั้งที่เรียกใช้ (rate limiting)
+ *
+ * ⚠️ ต้องเก็บในฐานข้อมูล ไม่ใช่ในหน่วยความจำของเซิร์ฟเวอร์
+ *    บน Vercel คำขอแต่ละครั้งอาจไปตกที่เครื่องคนละตัวกัน
+ *    ตัวนับที่เก็บไว้ในหน่วยความจำจึงกันอะไรไม่ได้เลย
+ *    คนยิงถล่มแค่ยิงรัว ๆ ก็จะกระจายไปเครื่องละนิดจนไม่มีเครื่องไหนนับถึงเพดาน
+ *
+ * key เก็บเป็นค่าที่แฮชแล้วเสมอ (เช่น "register:<ip ที่แฮชแล้ว>")
+ * เพื่อไม่ให้ตารางนี้กลายเป็นที่เก็บ IP ดิบซึ่งผิดข้อกำหนด PDPA
+ */
+export const rateLimits = pgTable("rate_limits", {
+  key: varchar("key", { length: 160 }).primaryKey(),
+  count: integer("count").notNull().default(0),
+  windowStartedAt: timestamp("window_started_at", { withTimezone: true }).notNull().defaultNow(),
+});

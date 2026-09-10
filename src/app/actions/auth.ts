@@ -7,6 +7,7 @@ import { auditLogs, users } from "@/db/schema";
 import { verifyPassword } from "@/lib/auth/password";
 import { createSession, destroySession, type SessionUser } from "@/lib/auth/session";
 import { hashIdentifier } from "@/lib/hash";
+import { checkRateLimit, RATE_LIMITS, rateLimitKey } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/tracking";
 
 /**
@@ -32,11 +33,35 @@ export async function loginAction(input: {
     return { ok: false, message: "กรุณากรอกอีเมลและรหัสผ่าน" };
   }
 
-  const [user] = await db.select().from(users).where(eq(users.email, email));
-
   const h = await headers();
   const ip = getClientIp(h);
   const ipHash = ip ? hashIdentifier(ip) : null;
+
+  /**
+   * จำกัดจำนวนครั้งต่อหนึ่งที่อยู่เครือข่าย เพิ่มจากการล็อกบัญชีที่มีอยู่แล้ว
+   *
+   * การล็อกบัญชีกันการเดารหัสของ "บัญชีเดียว" ได้ แต่กันการไล่ยิงหลายบัญชีไม่ได้
+   * ผู้โจมตีลองบัญชีละ 4 ครั้ง (ไม่ถึงเพดานล็อก) แล้ววนไปบัญชีถัดไปเรื่อย ๆ ได้ไม่จำกัด
+   * ด่านนี้จึงนับที่ต้นทางของคำขอแทน ไม่ว่าจะยิงใส่บัญชีไหนก็ตาม
+   *
+   * ตรวจก่อนอ่านฐานข้อมูล เพื่อไม่ให้การยิงถล่มกลายเป็นภาระของฐานข้อมูลไปด้วย
+   */
+  if (ip) {
+    const limit = await checkRateLimit(
+      rateLimitKey("login", ip),
+      RATE_LIMITS.login.limit,
+      RATE_LIMITS.login.windowSeconds,
+    );
+    if (!limit.allowed) {
+      const minutes = Math.ceil(limit.retryAfterSeconds / 60);
+      return {
+        ok: false,
+        message: `พยายามเข้าสู่ระบบถี่เกินไป กรุณารออีกประมาณ ${minutes} นาที`,
+      };
+    }
+  }
+
+  const [user] = await db.select().from(users).where(eq(users.email, email));
 
   async function logAttempt(action: string, userId: string | null) {
     await db.insert(auditLogs).values({

@@ -60,6 +60,18 @@ export const events = pgTable(
       .notNull()
       .default("1.0"),
 
+    /**
+     * ระยะเวลาเก็บข้อมูลส่วนบุคคลหลังงานจบ (วัน) — ข้อกำหนด PDPA
+     *
+     * ครบกำหนดแล้วระบบจะลบชื่อ อีเมล และเบอร์โทรออกโดยอัตโนมัติ
+     * แต่ยังเก็บจำนวนผู้เข้าร่วมแบบไม่ระบุตัวตนไว้ รายงานย้อนหลังจึงไม่เพี้ยน
+     *
+     * ค่า null = ไม่ลบอัตโนมัติ (ผู้ดูแลต้องจัดการเอง)
+     * ตั้งเป็น null เป็นค่าเริ่มต้นโดยตั้งใจ เพราะการลบข้อมูลย้อนกลับไม่ได้
+     * ต้องให้ผู้จัดงานเลือกเองว่าจะเก็บกี่วัน ไม่ใช่ให้ระบบเดาแทน
+     */
+    dataRetentionDays: integer("data_retention_days"),
+
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
 import { releaseAllExpiredHolds, releaseHold } from "@/lib/quota";
+import { cleanupRateLimits } from "@/lib/rate-limit";
+import { anonymizeExpiredRegistrations } from "@/lib/retention";
 
 /**
  * คืนที่นั่งเมื่อผู้ใช้ปิดหน้าเว็บระหว่างกรอกฟอร์ม
@@ -56,5 +58,20 @@ export async function GET(request: NextRequest) {
   }
 
   const released = await releaseAllExpiredHolds(db);
-  return NextResponse.json({ ok: true, released });
+
+  /**
+   * เก็บกวาดตัวนับ rate limit ที่หมดอายุแล้วไปพร้อมกัน
+   * ถ้าไม่ลบ ตารางจะโตขึ้นทุกวันโดยไม่มีที่สิ้นสุด ทั้งที่ข้อมูลหมดประโยชน์ไปแล้ว
+   */
+  const rateLimitsCleared = await cleanupRateLimits();
+
+  /**
+   * ลบข้อมูลส่วนบุคคลของงานที่ครบกำหนดเก็บแล้ว (PDPA)
+   *
+   * ทำในงานรายวันเดียวกัน เพราะถ้าแยกเป็นอีก cron ก็จะมีอีกจุดให้ลืมตั้งค่า
+   * และ Vercel แพ็กเกจ Hobby จำกัดจำนวน cron ไว้ด้วย
+   */
+  const retention = await anonymizeExpiredRegistrations();
+
+  return NextResponse.json({ ok: true, released, rateLimitsCleared, retention });
 }

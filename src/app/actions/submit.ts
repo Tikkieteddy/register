@@ -16,6 +16,7 @@ import {
 import { generateRegistrationCode, generateTicketCode } from "@/lib/codes";
 import { sendConfirmationEmail } from "@/lib/email/confirmation";
 import { hashIdentifier } from "@/lib/hash";
+import { checkRateLimit, RATE_LIMITS, rateLimitKey } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/tracking";
 import {
   registrationInputSchema,
@@ -49,6 +50,32 @@ export async function submitRegistrationAction(rawInput: unknown): Promise<Submi
   // honeypot: ช่องซ่อนที่คนมองไม่เห็น ถ้ามีค่าแปลว่าเป็น bot
   if (input.website.length > 0) {
     return { ok: false, fieldErrors: {}, message: "ตรวจพบการส่งข้อมูลที่ผิดปกติ" };
+  }
+
+  /**
+   * จำกัดจำนวนครั้งต่อหนึ่งที่อยู่เครือข่าย
+   *
+   * honeypot กันบอทง่าย ๆ ได้ แต่กันบอทที่เขียนมาเจาะระบบนี้โดยเฉพาะไม่ได้
+   * ถ้าไม่มีด่านนี้ คนเดียวเขียนสคริปต์ยิงรัวก็จองที่นั่งจนเต็มงานได้ในไม่กี่วินาที
+   *
+   * ตรวจก่อนแตะฐานข้อมูลส่วนอื่น เพื่อให้คำขอที่ถูกบล็อกใช้ทรัพยากรน้อยที่สุด
+   */
+  const requestHeaders = await headers();
+  const clientIp = getClientIp(requestHeaders);
+  if (clientIp) {
+    const limit = await checkRateLimit(
+      rateLimitKey("register", clientIp),
+      RATE_LIMITS.register.limit,
+      RATE_LIMITS.register.windowSeconds,
+    );
+    if (!limit.allowed) {
+      const minutes = Math.ceil(limit.retryAfterSeconds / 60);
+      return {
+        ok: false,
+        fieldErrors: {},
+        message: `ส่งข้อมูลถี่เกินไป กรุณารออีกประมาณ ${minutes} นาทีแล้วลองใหม่`,
+      };
+    }
   }
 
   const data = await getEventBySlug(input.eventSlug);
@@ -114,10 +141,8 @@ export async function submitRegistrationAction(rawInput: unknown): Promise<Submi
   }
 
   // ---------- ⑤ เก็บข้อมูลบริบทสำหรับ audit และ PDPA ----------
-  const h = await headers();
-  const ip = getClientIp(h);
-  const ipHash = ip ? hashIdentifier(ip) : null;
-  const userAgent = h.get("user-agent");
+  const ipHash = clientIp ? hashIdentifier(clientIp) : null;
+  const userAgent = requestHeaders.get("user-agent");
 
   const shareLink = input.shareLinkCode ? await getShareLinkByCode(input.shareLinkCode) : null;
 

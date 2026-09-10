@@ -15,14 +15,17 @@ import { FIELD, Labeled, Notice, SaveButton } from "./fields";
 export function PrivacyForm({
   eventId,
   policyVersion,
+  dataRetentionDays,
   consentSummary,
 }: {
   eventId: string;
   policyVersion: string;
+  dataRetentionDays: number | null;
   consentSummary: { type: string; label: string; granted: number; total: number }[];
 }) {
   const router = useRouter();
   const [version, setVersion] = useState(policyVersion);
+  const [retention, setRetention] = useState(dataRetentionDays?.toString() ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
@@ -36,6 +39,7 @@ export function PrivacyForm({
             const result = await updatePrivacyAction({
               eventId,
               privacyPolicyVersion: version,
+              dataRetentionDays: retention,
             });
             setErrors(result.ok ? {} : (result.fieldErrors ?? {}));
             setNotice({ ok: result.ok, text: result.message });
@@ -55,7 +59,27 @@ export function PrivacyForm({
           <input className={FIELD} value={version} onChange={(e) => setVersion(e.target.value)} />
         </Labeled>
 
-        <SaveButton pending={pending} label="บันทึกเวอร์ชันนโยบาย" />
+        <Labeled
+          label="ระยะเวลาเก็บข้อมูลส่วนบุคคล (วัน)"
+          hint="นับจากวันจบงาน · ครบกำหนดแล้วระบบจะลบชื่อ อีเมล และเบอร์โทรให้อัตโนมัติ แต่ยังเก็บยอดผู้เข้าร่วมไว้ ปล่อยว่าง = ไม่ลบอัตโนมัติ"
+          error={errors.dataRetentionDays}
+          className="max-w-xs"
+        >
+          <input
+            className={FIELD}
+            type="number"
+            inputMode="numeric"
+            placeholder="เช่น 180"
+            value={retention}
+            onChange={(e) => setRetention(e.target.value)}
+          />
+        </Labeled>
+
+        <p className="text-sm text-danger">
+          ⚠️ การลบข้อมูลตามกำหนดนี้ย้อนกลับไม่ได้ — ส่งออกรายงานที่ต้องใช้ให้เรียบร้อยก่อนถึงกำหนด
+        </p>
+
+        <SaveButton pending={pending} label="บันทึกการตั้งค่า" />
       </form>
 
       <section className="flex flex-col gap-2">

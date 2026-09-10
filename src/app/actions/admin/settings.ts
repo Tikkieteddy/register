@@ -270,6 +270,8 @@ export async function saveUserAction(input: {
 export async function updatePrivacyAction(input: {
   eventId: string;
   privacyPolicyVersion: string;
+  /** จำนวนวันที่เก็บข้อมูลหลังงานจบ — ค่าว่างแปลว่าไม่ลบอัตโนมัติ */
+  dataRetentionDays: string;
 }): Promise<SettingsResult> {
   const admin = await getAdminOrNull();
   if (!admin) return { ok: false, message: NOT_ADMIN_MESSAGE };
@@ -283,9 +285,29 @@ export async function updatePrivacyAction(input: {
     };
   }
 
+  /**
+   * ระยะเวลาเก็บข้อมูล — ว่างได้ แต่ถ้าใส่ต้องเป็นจำนวนเต็มบวก
+   *
+   * ⚠️ ตั้งน้อยเกินไปอันตราย เพราะการลบย้อนกลับไม่ได้
+   *    กันไว้ที่ 7 วันเป็นอย่างน้อย เผื่อเวลาให้ทีมส่งออกรายงานหลังงานจบก่อน
+   */
+  const retentionRaw = input.dataRetentionDays.trim();
+  let dataRetentionDays: number | null = null;
+  if (retentionRaw) {
+    const parsed = Number(retentionRaw);
+    if (!Number.isInteger(parsed) || parsed < 7 || parsed > 3650) {
+      return {
+        ok: false,
+        message: "ระยะเวลาเก็บข้อมูลไม่ถูกต้อง",
+        fieldErrors: { dataRetentionDays: "ต้องเป็นจำนวนเต็มระหว่าง 7 ถึง 3650 วัน" },
+      };
+    }
+    dataRetentionDays = parsed;
+  }
+
   await db
     .update(events)
-    .set({ privacyPolicyVersion: version, updatedAt: new Date() })
+    .set({ privacyPolicyVersion: version, dataRetentionDays, updatedAt: new Date() })
     .where(eq(events.id, input.eventId));
 
   await recordAudit({
@@ -293,7 +315,7 @@ export async function updatePrivacyAction(input: {
     action: "update_settings",
     entityType: "event_privacy",
     entityId: input.eventId,
-    after: { privacyPolicyVersion: version },
+    after: { privacyPolicyVersion: version, dataRetentionDays },
   });
 
   revalidatePath("/admin/settings");

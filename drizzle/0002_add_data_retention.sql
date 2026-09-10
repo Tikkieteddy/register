@@ -1,0 +1,1 @@
+ALTER TABLE "events" ADD COLUMN "data_retention_days" integer;

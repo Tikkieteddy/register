@@ -8,6 +8,20 @@
       "when": 1788427520202,
       "tag": "0000_init_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789016879205,
+      "tag": "0001_add_rate_limits",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789018386696,
+      "tag": "0002_add_data_retention",
+      "breakpoints": true
     }
   ]
 }
