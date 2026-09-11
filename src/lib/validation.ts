@@ -166,3 +166,42 @@ export function toFieldErrors(error: z.ZodError): Record<string, string> {
   }
   return out;
 }
+
+/* ------------------------------------------------------------------ */
+/* สมัครสมาชิก — ผู้เข้าร่วมงานทั่วไป                                    */
+/* ------------------------------------------------------------------ */
+
+/** เบอร์โทรแบบไม่บังคับ — ปล่อยว่างได้ แต่ถ้ากรอกต้องถูกรูปแบบ */
+const optionalPhoneSchema = z
+  .union([z.literal(""), phoneSchema])
+  .optional()
+  .transform((v) => (v ? v : null));
+
+/**
+ * กติกาของฟอร์มสมัครสมาชิก
+ *
+ * บังคับเฉพาะ ชื่อ · นามสกุล · อีเมล ที่เหลือไม่บังคับตามที่ตกลงไว้
+ * เพราะยิ่งบังคับกรอกมาก คนยิ่งเลิกกลางคัน — ข้อมูลที่เหลือขอเพิ่มทีหลังได้
+ */
+export const memberSignUpSchema = z.object({
+  firstName: nameSchema,
+  lastName: nameSchema,
+  email: emailSchema,
+  phone: optionalPhoneSchema,
+  address: z
+    .string()
+    .trim()
+    .max(500, "ที่อยู่ยาวเกินไป กรุณาย่อให้สั้นลง")
+    .optional()
+    .transform((v) => (v ? v : null)),
+  photoUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .optional()
+    .transform((v) => (v ? v : null)),
+  /** ต้องติ๊กยินยอมก่อนส่ง ตามข้อกำหนด PDPA */
+  consentPdpa: z.boolean().refine((v) => v, "กรุณายอมรับนโยบายความเป็นส่วนตัวก่อนสมัคร"),
+  /** ช่องซ่อนที่คนมองไม่เห็น ถ้ามีค่าแปลว่าเป็นบอท */
+  website: z.string().max(0).optional().default(""),
+});

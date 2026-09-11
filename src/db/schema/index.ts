@@ -5,6 +5,7 @@
 export * from "./enums";
 export * from "./events";
 export * from "./users";
+export * from "./members";
 export * from "./registrations";
 export * from "./tickets";
 export * from "./media";

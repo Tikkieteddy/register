@@ -118,19 +118,26 @@ function SectionHeading({
   );
 }
 
+/**
+ * ⚠️ ห้ามมีลิงก์ไปหลังบ้านบนหน้านี้ เพราะเป็นหน้าของผู้มาร่วมงาน
+ *    เดิมมีปุ่ม "ไปที่หน้าจัดการงาน" ซึ่งเท่ากับประกาศทางเข้าหลังบ้าน
+ *    ให้คนนอกเห็นฟรี ๆ ทั้งที่ไม่มีประโยชน์กับเขาเลย
+ *    ชวนสมัครสมาชิกแทน เพราะเป็นสิ่งที่คนเข้ามาหน้านี้ทำได้จริง
+ */
 function EmptyState() {
   return (
     <div className="rounded-[var(--radius-card)] border border-dashed border-line-strong bg-surface p-8 sm:p-10 text-center flex flex-col gap-2">
-      <p className="text-lg font-semibold text-ink">ยังไม่มีงานที่เผยแพร่</p>
+      <p className="text-lg font-semibold text-ink">ยังไม่มีงานที่เปิดรับลงทะเบียน</p>
       <p className="text-ink-2 max-w-[52ch] mx-auto">
-        ผู้ดูแลระบบสามารถสร้างงานใหม่และเปลี่ยนสถานะเป็น “เผยแพร่แล้ว” เพื่อให้งานปรากฏบนหน้านี้
+        สมัครสมาชิกไว้ล่วงหน้าได้ พอมีงานใหม่เปิดรับ จะสมัครเข้าร่วมได้ทันที
+        โดยไม่ต้องกรอกข้อมูลใหม่ทั้งหมด
       </p>
       <Link
-        href="/admin-cms/events"
+        href="/register"
         className="self-center mt-2 inline-flex items-center min-h-11 px-6 rounded-[var(--radius-pill)]
           border border-primary text-primary-dark hover:bg-primary-light transition-colors"
       >
-        ไปที่หน้าจัดการงาน
+        สมัครสมาชิก
       </Link>
     </div>
   );

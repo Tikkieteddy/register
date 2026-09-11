@@ -106,12 +106,17 @@ export function SiteHeader({
 
             <span aria-hidden="true" className="mx-2 h-5 w-px bg-[color:var(--color-line)]" />
 
+            {/*
+              ⚠️ หน้าเว็บฝั่งนี้เป็นของผู้มาร่วมงาน ห้ามมีลิงก์ไปหลังบ้านเด็ดขาด
+                 เจ้าหน้าที่และผู้ดูแลเข้าที่ /admin ซึ่งเป็นลิงก์ที่รู้กันภายใน
+                 ไม่ประกาศไว้บนหน้าเว็บสาธารณะ
+            */}
             <Link
-              href="/admin"
-              className="px-4 py-2 rounded-[var(--radius-pill)] text-sm border border-line-strong
-                text-ink-2 hover:border-primary hover:text-primary-dark transition-colors"
+              href="/register"
+              className="px-4 py-2 rounded-[var(--radius-pill)] text-sm border border-primary
+                text-primary-dark hover:bg-primary-light transition-colors"
             >
-              เข้าสู่ระบบ
+              สมัครสมาชิก
             </Link>
           </nav>
 
@@ -152,11 +157,11 @@ export function SiteHeader({
             </Link>
           ))}
           <Link
-            href="/admin"
+            href="/register"
             className="min-h-11 flex items-center px-3 rounded-[var(--radius-control)] text-sm
-              border border-line-strong text-ink-2 mt-1"
+              border border-primary text-primary-dark mt-1"
           >
-            เข้าสู่ระบบสำหรับเจ้าหน้าที่และผู้ดูแล
+            สมัครสมาชิก
           </Link>
         </nav>
       </div>

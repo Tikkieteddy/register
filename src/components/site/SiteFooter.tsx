@@ -47,8 +47,8 @@ export function SiteFooter({
           <Link href="/terms" className="text-ink-2 hover:text-primary-dark transition-colors">
             เงื่อนไขการใช้งาน
           </Link>
-          <Link href="/admin" className="text-muted hover:text-primary-dark transition-colors">
-            เข้าสู่ระบบ
+          <Link href="/register" className="text-ink-2 hover:text-primary-dark transition-colors">
+            สมัครสมาชิก
           </Link>
         </nav>
       </div>

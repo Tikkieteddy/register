@@ -29,6 +29,13 @@
       "when": 1789032453877,
       "tag": "0003_cancelled_can_register_again",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789115069452,
+      "tag": "0004_add_members",
+      "breakpoints": true
     }
   ]
 }

@@ -67,6 +67,17 @@ const REQUIREMENTS: Requirement[] = [
       return (rows[0]?.def ?? "").includes("cancelled");
     },
   },
+  {
+    migration: "0004_add_members",
+    what: "ตารางสมาชิก (หน้าสมัครสมาชิก /register)",
+    check: async (db) => {
+      const rows = await db.execute<{ n: number }>(sql`
+        select count(*)::int as n from information_schema.tables
+        where table_schema = 'public' and table_name = 'members'
+      `);
+      return (rows[0]?.n ?? 0) > 0;
+    },
+  },
 ];
 
 /**
