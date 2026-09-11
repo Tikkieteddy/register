@@ -95,7 +95,14 @@ await p.waitForTimeout(1200);
 await p.getByLabel("อีเมล").fill("admin@example.com");
 await p.getByLabel("รหัสผ่าน", { exact: true }).fill("admin-dev-1234");
 await p.getByRole("button", { name: "เข้าสู่ระบบ" }).click();
-await p.waitForFunction(() => document.body.innerText.includes("เลือกส่วนที่ต้องการใช้งาน"), null, { timeout: 30000 }).catch(() => {});
+/**
+ * ต้องรอให้หน้าเลือกส่วนงานขึ้นจริงก่อนไปหน้าอื่น
+ * เพราะการล็อกอินสำเร็จจะสั่งโหลดหน้าใหม่ทั้งหน้า ถ้าสั่งเปลี่ยนหน้าซ้อนเข้าไป
+ * ตอนที่ยังโหลดไม่เสร็จ เบราว์เซอร์จะยกเลิกคำสั่งหนึ่งทิ้ง แล้วเทสต์ล้มแบบสับสน
+ */
+await p
+  .getByRole("heading", { name: "เลือกส่วนที่ต้องการใช้งาน" })
+  .waitFor({ timeout: 30000 });
 
 await p.goto(`${BASE}/admin-cms/media`, { waitUntil: "domcontentloaded" });
 await p.getByRole("heading", { name: "ภาพและสื่อ" }).waitFor({ timeout: 45000 });
