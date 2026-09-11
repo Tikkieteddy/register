@@ -20,6 +20,7 @@
     "user:list": "tsx scripts/list-users.ts",
     "test:e2e": "node tests/e2e-register-flow.mjs && node tests/e2e-full-flow.mjs && node tests/e2e-staff-flow.mjs && node tests/e2e-offline-sync.mjs && node tests/e2e-admin-flow.mjs && node tests/e2e-admin-media.mjs && node tests/e2e-multi-event.mjs && node tests/e2e-audit-fixes.mjs && node tests/e2e-security.mjs",
     "db:demo": "tsx scripts/demo-data.ts",
+    "test:load": "tsx scripts/run-load-test.ts",
     "db:reset-demo": "tsx scripts/reset-demo.ts",
     "check:deploy": "tsx scripts/check-deploy.ts",
     "check:contrast": "tsx scripts/check-contrast.ts"
