@@ -36,9 +36,18 @@ async function login(email, password) {
   await p.getByLabel("อีเมล").fill(email);
   await p.getByLabel("รหัสผ่าน", { exact: true }).fill(password);
   await p.getByRole("button", { name: "เข้าสู่ระบบ" }).click();
+  /**
+   * ⚠️ ต้องรอด้วย locator ห้ามใช้ waitForFunction ตรงนี้
+   *
+   *    การล็อกอินสำเร็จจะสั่งโหลดหน้าใหม่ทั้งหน้า ซึ่งทำลาย JavaScript context เดิม
+   *    waitForFunction ที่รันอยู่บน context นั้นจะพังกลางคัน แล้วเทสต์ก็วิ่งต่อ
+   *    ทั้งที่หน้ายังโหลดไม่เสร็จ พอสั่งเปลี่ยนหน้าซ้อนเข้าไปก็ชนกันแล้วล้มแบบสับสน
+   *
+   *    locator.waitFor ของ Playwright รู้จักการโหลดหน้าใหม่ จึงรอได้ถูกต้อง
+   */
   await p
-    .waitForFunction(() => document.body.innerText.includes("เลือกส่วนที่ต้องการใช้งาน"), null, { timeout: 30000 })
-    .catch(() => {});
+    .getByRole("heading", { name: "เลือกส่วนที่ต้องการใช้งาน" })
+    .waitFor({ timeout: 30000 });
 }
 
 // ---------- ① เจ้าหน้าที่ธรรมดาต้องเข้าหลังบ้านไม่ได้ ----------
