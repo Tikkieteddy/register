@@ -186,6 +186,64 @@ try {
     /\/staff\/login/.test(p.url()), p.url());
   await sql`update users set is_active = true where email = 'staff@example.com'`;
 
+  /* ---------------- A3ก — session ต้องไม่ปนกันข้ามคำขอ ---------------- */
+  console.log("\nA3ก ล็อกอินแล้วต้องเข้าหลังบ้านได้ทุกหน้า และ session ต้องไม่ปนกัน");
+
+  /**
+   * ⚠️ เทสต์นี้เกิดจากบั๊กจริงที่หลุดขึ้นเครื่องจริงไปแล้วครั้งหนึ่ง
+   *
+   *    ตอนนั้นเอา cache() ของ React มาครอบ getSession() ซึ่งไม่รับพารามิเตอร์เลย
+   *    ทุกคำขอจึงถูกมองเป็นอันเดียวกัน แล้วคำตอบของคำขอที่ยังไม่ได้ล็อกอิน
+   *    ถูกเอาไปตอบคำขอของคนที่ล็อกอินแล้ว
+   *
+   *    อาการคือ "ล็อกอินติด แต่เปิดหน้าหลังบ้านแล้วเด้งกลับหน้าล็อกอินทุกครั้ง"
+   *    ซึ่งเทสต์เดิมจับไม่ได้ เพราะเทสต์เดิมเปิดทีละหน้าแบบไม่มีคำขออื่นแทรก
+   */
+  const adminCtx = await b.newContext();
+  const ap = await adminCtx.newPage();
+  await ap.goto(`${BASE}/staff/login`, { waitUntil: "domcontentloaded" });
+  await ap.getByRole("heading", { name: "เข้าสู่ระบบเจ้าหน้าที่" }).waitFor({ timeout: 20000 });
+  await ap.waitForTimeout(1500);
+  await ap.getByLabel("อีเมล").fill("admin@example.com");
+  await ap.getByLabel("รหัสผ่าน", { exact: true }).fill("admin-dev-1234");
+  await ap.getByRole("button", { name: "เข้าสู่ระบบ" }).click();
+  await ap.waitForTimeout(3000);
+
+  const ADMIN_PAGES = [
+    "/admin",
+    "/admin/registrations",
+    "/admin/emails",
+    "/admin/links",
+    "/admin/media",
+    "/admin/settings",
+    "/admin/events",
+    "/admin/audit",
+    "/admin/report",
+  ];
+  let bounced = 0;
+  for (const path of ADMIN_PAGES) {
+    await ap.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
+    await ap.waitForTimeout(500);
+    if (ap.url().includes("/staff/login")) bounced++;
+  }
+  check(`เข้าหน้าหลังบ้านได้ครบทั้ง ${ADMIN_PAGES.length} หน้า`, bounced === 0,
+    `ถูกเด้งออก ${bounced} หน้า`);
+
+  // ยิงคำขอที่ "ไม่มีคุกกี้" พร้อมกับคำขอที่ "มีคุกกี้" ซ้ำ ๆ
+  // ถ้า session ปนกัน คำขอที่มีคุกกี้จะถูกเด้งออกทั้งที่ล็อกอินแล้ว
+  const jar = (await adminCtx.cookies()).map((c) => `${c.name}=${c.value}`).join("; ");
+  let mixedUp = 0;
+  for (let i = 0; i < 10; i++) {
+    const [, authed] = await Promise.all([
+      fetch(`${BASE}/admin`, { redirect: "manual" }),
+      fetch(`${BASE}/admin`, { headers: { cookie: jar }, redirect: "manual" }),
+    ]);
+    if (authed.status !== 200) mixedUp++;
+  }
+  check("ยิงคำขอที่ไม่ได้ล็อกอินแทรกเข้ามา session ก็ไม่ปนกัน", mixedUp === 0,
+    `คำขอที่ล็อกอินแล้วถูกเด้งออก ${mixedUp} จาก 10 ครั้ง`);
+  await adminCtx.close();
+
   /* ---------------- A1 — จองที่นั่งรัว ๆ ต้องถูกบล็อก ---------------- */
   console.log("\nA1 กันการยิงจองที่นั่งรัว ๆ");
   await sql`delete from rate_limits`;

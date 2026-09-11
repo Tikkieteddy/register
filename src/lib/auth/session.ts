@@ -1,7 +1,6 @@
 import { eq } from "drizzle-orm";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { cache } from "react";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { getServerEnv } from "@/lib/env";
@@ -78,10 +77,20 @@ export async function destroySession(): Promise<void> {
  *    หรือลดสิทธิ์จาก admin เป็น staff) คนนั้นจะยังใช้งานต่อได้อีกจนถึงเช้าวันรุ่งขึ้น
  *    ซึ่งเป็นช่องโหว่ที่ผู้ดูแลปิดเองไม่ได้เลย
  *
- *    ใช้ cache() ของ React ครอบไว้ เพื่อให้หนึ่งคำขอเรียกฐานข้อมูลแค่ครั้งเดียว
- *    แม้จะมีหลายส่วนของหน้าเรียก getSession() ก็ตาม
+ * ⚠️ ห้ามเอา cache() ของ React มาครอบฟังก์ชันนี้เด็ดขาด — เคยทำแล้วพัง
+ *
+ *    ฟังก์ชันนี้ไม่รับพารามิเตอร์เลย cache() จึงมองทุกคำขอเป็นอันเดียวกันหมด
+ *    แล้วเอาคำตอบของคำขอหนึ่งไปตอบอีกคำขอหนึ่ง ซึ่งอันตรายสองต่อ:
+ *      ① คนที่ล็อกอินแล้วถูกเด้งออก เพราะได้คำตอบของคำขอที่ยังไม่ได้ล็อกอิน
+ *      ② ร้ายแรงกว่านั้นคือ session ของคนหนึ่งอาจรั่วไปให้อีกคน
+ *
+ *    อาการที่เจอจริง: ล็อกอินสำเร็จ ใช้หน้าเจ้าหน้าที่ได้ปกติ แต่เปิดหน้าหลังบ้าน
+ *    แล้วเด้งกลับหน้าล็อกอินทุกครั้ง ทั้งที่เป็นคนเดียวกัน เครื่องเดียวกัน
+ *
+ *    การเรียกฐานข้อมูลซ้ำในคำขอเดียวถูกกว่าความเสี่ยงนี้มาก — เป็นการค้นด้วย
+ *    primary key ที่มี index อยู่แล้ว ไม่คุ้มที่จะไปประหยัดแล้วแลกกับความปลอดภัย
  */
-export const getSession = cache(async function getSession(): Promise<SessionUser | null> {
+export async function getSession(): Promise<SessionUser | null> {
   const store = await cookies();
   const token = store.get(COOKIE_NAME)?.value;
   if (!token) return null;
@@ -115,7 +124,13 @@ export const getSession = cache(async function getSession(): Promise<SessionUser
       .where(eq(users.id, claims.id));
 
     // บัญชีถูกลบหรือถูกปิดไปแล้ว — ตัดสิทธิ์ทันที ไม่ต้องรอโทเคนหมดอายุ
-    if (!row || !row.isActive) return null;
+    if (!row) {
+      // เขียน log ไว้เพราะกรณีนี้ผิดปกติ: โทเคนถูกต้องแต่ไม่มีบัญชีในฐานข้อมูล
+      // มักแปลว่ากำลังต่อคนละฐานข้อมูลกับตอนที่ออกโทเคนให้
+      console.warn(`[auth] โทเคนถูกต้องแต่ไม่พบบัญชี id=${claims.id} ในฐานข้อมูล`);
+      return null;
+    }
+    if (!row.isActive) return null;
 
     // ใช้สิทธิ์ล่าสุดจากฐานข้อมูลเสมอ ไม่ใช่สิทธิ์ ณ วันที่ล็อกอิน
     return {
@@ -136,7 +151,7 @@ export const getSession = cache(async function getSession(): Promise<SessionUser
     console.error("[auth] ตรวจสอบสิทธิ์กับฐานข้อมูลไม่สำเร็จ ใช้ค่าในโทเคนแทน:", error);
     return claims;
   }
-});
+}
 
 /**
  * สิทธิ์เข้าหน้าสแกน QR
