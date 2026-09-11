@@ -4,13 +4,32 @@
  * ต้องเปิดเซิร์ฟเวอร์ไว้ก่อนที่ http://localhost:3100 แล้วรัน:
  *   node tests/e2e-staff-flow.mjs staff.png
  *
- * ⚠️ ต้องล้างข้อมูลการเช็คอินก่อนรันทุกครั้ง ไม่งั้นรอบที่สองจะขึ้น "เช็คอินไปแล้ว"
- *    psql -c "DELETE FROM check_ins; UPDATE event_sessions SET checked_in_count=0;"
+ * เทสต์สร้างผู้ลงทะเบียนของตัวเองและลบทิ้งเมื่อจบ จึงรันซ้ำได้เรื่อย ๆ
+ * โดยไม่ต้องล้างฐานข้อมูลก่อน และไม่ไปรบกวนเทสต์ตัวอื่น
  *
  * ครอบคลุม: กันเข้าถึงโดยไม่ล็อกอิน, ล็อกอินผิด/ถูก, ตัวนับเช็คอิน,
  * ค้นหาและเช็คอิน, สแกนซ้ำขึ้นจอเหลือง, ลงทะเบียนหน้างาน, และบัตรห้อยคอ
  */
 import { launchBrowser } from "./browser.mjs";
+import { connect, createTestRegistrant, deleteTestRegistrants } from "./db.mjs";
+
+/**
+ * ⚠️ เทสต์ต้องสร้างคนของตัวเอง ห้ามไปหยิบข้อมูลตัวอย่างมาใช้
+ *
+ *    เดิมเทสต์ค้นคำว่า "สมชาย" แล้วกดคนแรกในผลลัพธ์ ซึ่งพอรันซ้ำหรือรันหลัง
+ *    เทสต์ตัวอื่น คนคนนั้นเช็คอินไปแล้ว เทสต์จึงได้จอเหลือง "เช็คอินไปแล้ว"
+ *    แทนจอเขียว แล้วฟ้องว่าไม่ผ่านทั้งที่ระบบทำงานถูกต้อง
+ *    เราหลงคิดว่าเป็น "เทสต์ที่ไม่เสถียร" อยู่หลายวัน
+ */
+const TEST_FIRST_NAME = "ทดสอบเช็คอิน";
+const sql = connect();
+await deleteTestRegistrants(sql, { firstName: TEST_FIRST_NAME });
+const guest = await createTestRegistrant(sql, {
+  eventSlug: "tnn-event-2026",
+  firstName: TEST_FIRST_NAME,
+  lastName: "หน้างาน",
+});
+console.log(`  👤 สร้างผู้ลงทะเบียนสำหรับเทสต์: ${TEST_FIRST_NAME} (${guest.registrationCode})`);
 
 const b = await launchBrowser();
 const ctx = await b.newContext({ viewport: { width: 430, height: 930 }, deviceScaleFactor: 2 });
@@ -59,10 +78,10 @@ log(Boolean(dl), `ดาวน์โหลดรายชื่อลงเค�
 // ---------- ⑤ ค้นหาและเช็คอิน ----------
 await p.getByRole("link", { name: /ค้นหารายชื่อ/ }).click();
 await p.getByLabel("ค้นหาผู้ลงทะเบียน").waitFor({ timeout: 20000 });
-await p.getByLabel("ค้นหาผู้ลงทะเบียน").fill("สมชาย");
+await p.getByLabel("ค้นหาผู้ลงทะเบียน").fill(TEST_FIRST_NAME);
 await p.waitForTimeout(1500);
 const hitCount = await p.locator("li button").count();
-log(hitCount > 0, `ค้นหาด้วยชื่อไทยเจอ ${hitCount} รายการ`);
+log(hitCount === 1, `ค้นหาด้วยชื่อไทยเจอคนที่ต้องการพอดี 1 รายการ (เจอ ${hitCount})`);
 
 if (hitCount > 0) {
   await p.locator("li button").first().click();
@@ -72,7 +91,7 @@ if (hitCount > 0) {
 
   // ---------- ⑥ เช็คอินซ้ำ ต้องขึ้นจอเหลือง ----------
   await p.getByRole("button", { name: /สแกนคนถัดไป/ }).click();
-  await p.getByLabel("ค้นหาผู้ลงทะเบียน").fill("สมชาย");
+  await p.getByLabel("ค้นหาผู้ลงทะเบียน").fill(TEST_FIRST_NAME);
   await p.waitForTimeout(1500);
   await p.locator("li button").first().click();
   await p.getByRole("status").waitFor({ timeout: 10000 });
@@ -103,5 +122,13 @@ log(true, "ลงทะเบียนหน้างานสำเร็จแ
 
 console.log(`\n  pageerror: ${errs.length}`);
 if (errs.length) console.log("   " + errs.slice(0, 3).join("\n   "));
+
+// เก็บกวาดข้อมูลที่เทสต์สร้างขึ้น ทั้งคนที่สร้างไว้และคนที่ลงทะเบียนหน้างานในข้อ ⑦
+const removed =
+  (await deleteTestRegistrants(sql, { firstName: TEST_FIRST_NAME })) +
+  (await deleteTestRegistrants(sql, { firstName: "วอล์ค" }));
+console.log(`  🧹 ลบข้อมูลที่เทสต์สร้างขึ้น ${removed} รายการ`);
+await sql.end({ timeout: 5 });
+
 await b.close();
 process.exit(fail === 0 ? 0 : 1);

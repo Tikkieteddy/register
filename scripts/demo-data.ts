@@ -44,6 +44,28 @@ async function main() {
   const [event] = await db.select().from(events).orderBy(sql`starts_at desc`).limit(1);
   if (!event) throw new Error("ยังไม่มีงานในระบบ — รัน npm run db:seed ก่อน");
 
+  /**
+   * ล้างข้อมูลตัวอย่างเดิมทิ้งก่อนสร้างใหม่เสมอ
+   *
+   * ⚠️ เดิมสคริปต์นี้เติมคนใหม่ 120 คนทับลงไปเรื่อย ๆ โดยไม่ล้างของเก่า
+   *    รันไปไม่กี่รอบก็มีคนในระบบหลายร้อยคน ทำให้เทสต์ที่ตรวจจำนวนผู้ลงทะเบียน
+   *    ฟ้องว่าไม่ผ่านแบบไม่มีเหตุผล และเทสต์ที่ค้นหารายชื่อก็ช้าลงจนรอไม่ทัน
+   *    เราเสียเวลาไล่หาสาเหตุผิดทางอยู่นานเพราะเรื่องนี้
+   *
+   *    ตอนนี้รันกี่ครั้งก็ได้ผลเหมือนเดิมเสมอ (120 คน) — ใช้คำสั่งชุดเดียวกับ
+   *    npm run db:reset-demo
+   */
+  await db.execute(sql`
+    truncate table check_ins, badge_prints, tickets, registration_answers,
+                   registration_sessions, consents, email_logs, seat_holds,
+                   calendar_syncs, link_events, registrations
+    restart identity cascade
+  `);
+  await db.execute(sql`update event_sessions set reserved_count = 0, checked_in_count = 0`);
+  await db.execute(
+    sql`update share_links set click_count = 0, unique_count = 0, conversion_count = 0`,
+  );
+
   const sessions = await db
     .select()
     .from(eventSessions)

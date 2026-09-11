@@ -10,9 +10,22 @@
  */
 import { writeFileSync } from "node:fs";
 import { launchBrowser } from "./browser.mjs";
+import { connect, deleteTestMedia } from "./db.mjs";
 import { deflateSync } from "node:zlib";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3100";
+const EVENT_SLUG = "tnn-event-2026";
+
+/**
+ * ⚠️ ต้องล้างภาพเก่าทิ้งก่อนเริ่ม และลบของตัวเองทิ้งเมื่อจบ
+ *
+ *    เดิมเทสต์นี้อัปโหลดภาพทิ้งไว้ทุกรอบโดยไม่ลบ ไฟล์จึงพอกขึ้นเรื่อย ๆ
+ *    แล้วข้อที่ตรวจ "ภาพแรกที่เจอบนหน้า" ก็ไปเจอไฟล์ค้างจากรอบก่อน
+ *    แทนไฟล์ที่เพิ่งอัปโหลด แล้วฟ้องว่าไม่ผ่านทั้งที่ระบบทำงานถูกต้อง
+ *    เราหลงคิดว่าเป็น "เทสต์ที่ไม่เสถียร" อยู่หลายวัน
+ */
+const sql = connect();
+await deleteTestMedia(sql, { eventSlug: EVENT_SLUG });
 
 /** สร้างไฟล์ PNG สีเดียวขึ้นมาเอง เพื่อไม่ต้องเก็บไฟล์ภาพไว้ใน repo */
 function makePng(path, w, h, rgb) {
@@ -94,8 +107,36 @@ await p.locator('select[name="type"]').selectOption("poster");
 await p.locator('input[type="file"]').setInputFiles("/tmp/uat-poster-ok.png");
 await p.getByRole("button", { name: "อัปโหลด" }).click();
 await p.waitForTimeout(9000);
+
+/**
+ * ⚠️ เทสต์นี้ต้องรันบนเซิร์ฟเวอร์โหมดพัฒนา (npm run dev) เท่านั้น
+ *
+ *    ระบบจงใจไม่ยอมเขียนไฟล์ลงดิสก์เมื่อรันแบบเครื่องจริง เพราะ Vercel
+ *    มีระบบไฟล์แบบอ่านอย่างเดียว ไฟล์ที่เขียนไว้จะหายทุกครั้งที่ deploy
+ *    บนเครื่องจริงจึงต้องตั้งค่า Cloudflare R2 ก่อน
+ *
+ *    เดิมพอรันผิดโหมด เทสต์จะล้มแบบไม่บอกสาเหตุ — ขึ้นแค่ว่าหาภาพไม่เจอ
+ *    แล้วเราก็ไล่หาสาเหตุผิดทางอยู่นาน จึงต้องบอกให้ชัดตั้งแต่ตรงนี้
+ */
+if ((await p.getByText(/ยังไม่ได้ตั้งค่าที่เก็บไฟล์/).count()) > 0) {
+  console.log("\n⏭️  ข้ามเทสต์นี้ — ที่เก็บไฟล์ยังไม่พร้อมใช้งาน");
+  console.log("    เซิร์ฟเวอร์ที่รันอยู่เป็นโหมดเครื่องจริง ซึ่งไม่ยอมเขียนไฟล์ลงดิสก์");
+  console.log("    วิธีรันให้ผ่าน: เปิดเซิร์ฟเวอร์ด้วย npm run dev แล้วรันเทสต์นี้ใหม่");
+  console.log("    (หรือตั้งค่า Cloudflare R2 ให้ครบ ถ้าต้องการทดสอบกับที่เก็บไฟล์จริง)");
+  await sql.end({ timeout: 5 });
+  await b.close();
+  process.exit(0);
+}
+
 log((await p.getByText("อัปโหลดเรียบร้อย").count()) > 0, "อัปโหลดโปสเตอร์ 1200×1200 สำเร็จ");
-log((await p.getByText("1200×1200").count()) > 0, "อ่านความกว้าง-สูงของภาพมาเก็บไว้ถูกต้อง");
+
+/**
+ * ต้องอ่านขนาดจากการ์ดภาพเท่านั้น ห้ามค้นทั้งหน้า
+ * เพราะหน้านี้มีข้อความ "ขนาดที่แนะนำ 1200×1200" อยู่แล้วตั้งแต่ยังไม่อัปโหลด
+ * เทสต์เดิมค้นทั้งหน้าจึงขึ้นผ่านตลอด แม้ตอนที่อัปโหลดล้มไปแล้ว
+ */
+log((await p.locator("figure").getByText("1200×1200").count()) > 0,
+  "อ่านความกว้าง-สูงของภาพมาเก็บไว้ถูกต้อง");
 log(
   (await p.getByText("ยังไม่มีคำอธิบายภาพ").count()) > 0,
   "เตือนว่ายังไม่มีคำอธิบายภาพ (จำเป็นต่อคะแนนการเข้าถึง)",
@@ -172,6 +213,11 @@ log(
 );
 
 console.log("\n" + (errs.length ? `⚠️ พบข้อผิดพลาด:\n${errs.slice(0, 6).join("\n")}` : "✅ ไม่มีข้อผิดพลาดในเบราว์เซอร์"));
+
+const removed = await deleteTestMedia(sql, { eventSlug: EVENT_SLUG });
+console.log(`🧹 ลบภาพที่เทสต์อัปโหลดไว้ ${removed} รายการ`);
+await sql.end({ timeout: 5 });
+
 console.log(fail === 0 ? "\n✅ ผ่านทั้งหมด" : `\n❌ ไม่ผ่าน ${fail} ข้อ`);
 
 await b.close();
