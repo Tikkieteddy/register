@@ -95,3 +95,13 @@ export function getStorage(): StorageAdapter {
   adapter ??= createDefaultAdapter();
   return adapter;
 }
+
+/**
+ * ที่เก็บไฟล์พร้อมใช้งานจริงหรือยัง
+ *
+ * ใช้ในหน้าตรวจสุขภาพระบบ เพื่อให้ผู้จัดงานรู้ตัวก่อนวันงานว่ายังตั้งค่าไม่ครบ
+ * แทนที่จะไปรู้เอาตอนกดอัปโหลดโปสเตอร์แล้วไม่สำเร็จ
+ */
+export function isStorageConfigured(): boolean {
+  return getStorage().name !== "not-configured";
+}

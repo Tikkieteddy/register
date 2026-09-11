@@ -244,6 +244,23 @@ try {
     `คำขอที่ล็อกอินแล้วถูกเด้งออก ${mixedUp} จาก 10 ครั้ง`);
   await adminCtx.close();
 
+  /* ---------------- หน้าตรวจสุขภาพระบบ ---------------- */
+  console.log("\nเฝ้าระวัง หน้าตรวจสุขภาพระบบต้องไม่บอกจุดอ่อนให้คนนอก");
+
+  const publicHealth = await fetch(`${BASE}/api/health`);
+  const publicBody = await publicHealth.json();
+  check("คนนอกเรียกได้และได้สถานะกลับไป", publicHealth.status === 200 && publicBody.status === "ok",
+    `status=${publicHealth.status} ${JSON.stringify(publicBody).slice(0, 80)}`);
+
+  /**
+   * ⚠️ ข้อนี้สำคัญกว่าที่เห็น
+   *    การบอกคนนอกว่า "ระบบอีเมลยังไม่ได้ตั้งค่า" หรือ "ฐานข้อมูลล่ม"
+   *    คือการบอกจุดอ่อนให้คนที่อยากโจมตีฟรี ๆ
+   */
+  check("ไม่เปิดเผยรายละเอียดภายในให้คนที่ไม่ได้ล็อกอิน",
+    publicBody.checks === undefined && !JSON.stringify(publicBody).includes("R2_"),
+    JSON.stringify(publicBody).slice(0, 120));
+
   /* ---------------- A1 — จองที่นั่งรัว ๆ ต้องถูกบล็อก ---------------- */
   console.log("\nA1 กันการยิงจองที่นั่งรัว ๆ");
   await sql`delete from rate_limits`;
