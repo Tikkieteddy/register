@@ -119,10 +119,10 @@ export default async function RegistrationsPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <a href={`/api/admin-cms/export?format=xlsx&${filterQuery}`} className={exportButton}>
+          <a href={`/api/admin/export?format=xlsx&${filterQuery}`} className={exportButton}>
             Excel (.xlsx)
           </a>
-          <a href={`/api/admin-cms/export?format=csv&${filterQuery}`} className={exportButton}>
+          <a href={`/api/admin/export?format=csv&${filterQuery}`} className={exportButton}>
             CSV
           </a>
           <Link href="/admin-cms/report" className={exportButton}>
