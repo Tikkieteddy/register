@@ -69,8 +69,37 @@ const REQUIREMENTS: Requirement[] = [
   },
 ];
 
+/**
+ * บอกว่ากำลังตรวจฐานข้อมูลตัวไหน โดยไม่เปิดเผยรหัสผ่าน
+ *
+ * ⚠️ จำเป็นมาก ไม่ใช่ของประดับ
+ *    เครื่องนักพัฒนามีฐานข้อมูล 2 ตัวเสมอ — ตัวในเครื่องกับตัวจริงบนคลาวด์
+ *    ถ้าไม่บอกว่ากำลังดูตัวไหนอยู่ คนจะเห็นติ๊กเขียวแล้วนึกว่าพร้อม
+ *    ทั้งที่เพิ่งอัปเดตแค่ตัวในเครื่อง ส่วนตัวจริงยังไม่ได้แตะเลย
+ */
+function describeDatabase(): { label: string; isLocal: boolean } {
+  const raw = process.env.DATABASE_URL ?? "";
+  try {
+    const url = new URL(raw);
+    const host = url.hostname;
+    const isLocal =
+      host === "localhost" || host === "127.0.0.1" || host === "::1" || host.endsWith(".local");
+    const kind = isLocal
+      ? "ฐานข้อมูลในเครื่องคุณเอง (ไม่ใช่ตัวจริงที่เว็บใช้)"
+      : host.includes("supabase")
+        ? "Supabase — ฐานข้อมูลตัวจริงที่เว็บใช้งาน"
+        : "ฐานข้อมูลภายนอก";
+    return { label: `${kind}\n   ที่อยู่: ${host}${url.port ? ":" + url.port : ""}`, isLocal };
+  } catch {
+    return { label: "อ่านที่อยู่ฐานข้อมูลไม่ได้ — ตรวจ DATABASE_URL ใน .env.local", isLocal: false };
+  }
+}
+
 async function main() {
   console.log("\n🔍 ตรวจว่าฐานข้อมูลอัปเดตครบตามโค้ดล่าสุดหรือยัง\n");
+
+  const target = describeDatabase();
+  console.log(`กำลังตรวจ: ${target.label}\n`);
 
   // ① ไฟล์ migration อยู่ในเครื่องครบหรือไม่ — จับกรณี git pull ไม่สำเร็จ
   const files = readdirSync(new URL("../drizzle", import.meta.url))
@@ -116,6 +145,14 @@ async function main() {
     console.log("\n   ให้รัน: npm run db:migrate");
     console.log("   แล้วรัน npm run db:verify ซ้ำอีกครั้ง");
     console.log("   ⚠️ ห้าม deploy จนกว่าคำสั่งนี้จะขึ้นว่าพร้อม\n");
+    process.exit(1);
+  }
+
+  if (target.isLocal) {
+    console.log("\n⚠️ ฐานข้อมูลในเครื่องอัปเดตครบแล้ว แต่ยัง deploy ไม่ได้");
+    console.log("   เพิ่งตรวจแค่ฐานข้อมูลในเครื่องคุณ ไม่ใช่ตัวจริงที่เว็บใช้งาน");
+    console.log("   ต้องอัปเดตฐานข้อมูลตัวจริงด้วย โดยชี้ DATABASE_URL ไปที่ตัวจริงชั่วคราว");
+    console.log("   แล้วรัน npm run db:migrate กับ npm run db:verify ซ้ำอีกรอบ\n");
     process.exit(1);
   }
 
