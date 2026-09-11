@@ -10,7 +10,11 @@ import { getSession, isAdmin, type SessionUser } from "@/lib/auth/session";
  */
 export async function requireAdmin(): Promise<SessionUser> {
   const user = await getSession();
-  if (!user) redirect("/admin?next=/admin-cms");
+  /**
+   * ไม่ส่ง ?next= ไปด้วย เพราะหน้าทางเข้าให้เลือกส่วนงานเองเสมอหลังล็อกอิน
+   * ใส่ไปก็ไม่มีผล แล้วจะทำให้คนอ่านโค้ดเข้าใจผิดว่าระบบพากลับที่เดิมให้
+   */
+  if (!user) redirect("/admin");
   // มีสิทธิ์เข้าระบบ แต่ไม่ใช่ผู้ดูแล — ส่งกลับหน้าเลือกทางเข้า ซึ่งจะบอกเองว่าเข้าอะไรได้บ้าง
   if (!isAdmin(user)) redirect("/admin?denied=cms");
   return user;

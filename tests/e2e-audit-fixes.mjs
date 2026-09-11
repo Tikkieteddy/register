@@ -175,8 +175,17 @@ try {
   await p.getByLabel("อีเมล").fill("staff@example.com");
   await p.getByLabel("รหัสผ่าน", { exact: true }).fill("staff-dev-1234");
   await p.getByRole("button", { name: "เข้าสู่ระบบ" }).click();
-  await p.waitForURL(/\/admin(-scan)?(\?|$)/, { timeout: 25000 });
-  check("ล็อกอินสำเร็จ ไม่ค้างอยู่หน้าล็อกอิน", !/\/admin\/?$/.test(p.url()) || p.url().includes("next="), p.url());
+  /**
+   * รอหัวข้อของหน้าเลือกส่วนงาน ไม่ใช่รอ URL
+   * เพราะหน้าล็อกอินกับหน้าเลือกส่วนงานใช้ที่อยู่เดียวกัน (/admin)
+   * การรอ URL จึงผ่านทันทีตั้งแต่ยังไม่ได้ล็อกอิน แล้วเทสต์จะไปเช็คถูกจุดไม่ได้
+   */
+  await p
+    .getByRole("heading", { name: "เลือกส่วนที่ต้องการใช้งาน" })
+    .waitFor({ timeout: 25000 })
+    .catch(() => {});
+  check("ล็อกอินสำเร็จ ได้หน้าเลือกส่วนงาน",
+    (await p.getByRole("heading", { name: "เลือกส่วนที่ต้องการใช้งาน" }).count()) > 0, p.url());
 
   // ผู้ดูแลปิดบัญชีระหว่างที่เจ้าหน้าที่ยังเปิดหน้าค้างอยู่ (คุกกี้ยังไม่หมดอายุ)
   await sql`update users set is_active = false where email = 'staff@example.com'`;
@@ -210,7 +219,7 @@ try {
   await ap.waitForTimeout(3000);
 
   const ADMIN_PAGES = [
-    "/admin",
+    "/admin-cms",
     "/admin-cms/registrations",
     "/admin-cms/emails",
     "/admin-cms/links",
@@ -224,7 +233,12 @@ try {
   for (const path of ADMIN_PAGES) {
     await ap.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
     await ap.waitForTimeout(500);
-    if (ap.url().includes("/admin")) bounced++;
+    /**
+     * ถูกเด้งออก = ถูกพากลับไปหน้าทางเข้า (/admin หรือ /admin?denied=cms)
+     * ⚠️ ห้ามเช็คด้วย includes("/admin") เพราะ /admin-cms ก็มีคำว่า /admin อยู่ในนั้น
+     *    แล้วจะนับว่าถูกเด้งทุกหน้าทั้งที่เข้าได้ปกติ
+     */
+    if (/\/admin(\?|$)/.test(ap.url())) bounced++;
   }
   check(`เข้าหน้าหลังบ้านได้ครบทั้ง ${ADMIN_PAGES.length} หน้า`, bounced === 0,
     `ถูกเด้งออก ${bounced} หน้า`);

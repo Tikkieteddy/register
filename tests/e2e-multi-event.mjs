@@ -66,12 +66,15 @@ async function main() {
 
     /* ---------- ② สร้างงานใหม่ ---------- */
     console.log("\n② สร้างงานใหม่จากหลังบ้าน");
-    await page.goto(`${BASE}/admin?next=/admin-cms/events`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1500);
     await page.getByRole("textbox", { name: "อีเมล", exact: true }).fill(ADMIN_EMAIL);
     await page.locator('input[type="password"]').fill(ADMIN_PASSWORD);
     await page.getByRole("button", { name: "เข้าสู่ระบบ" }).click();
-    await page.waitForURL(/\/admin\/events/, { timeout: 15000 });
+    // ล็อกอินเสร็จจะมาอยู่หน้าเลือกส่วนงาน ต้องกดเข้าระบบจัดการงานอีกทีหนึ่ง
+    await page.getByRole("link", { name: /ระบบจัดการงาน/ }).click({ timeout: 20000 });
+    await page.waitForURL(/\/admin-cms/, { timeout: 15000 });
+    await page.goto(`${BASE}/admin-cms/events`, { waitUntil: "domcontentloaded" });
 
     const eventsHeading = page.getByRole("heading", { name: "จัดการงาน" });
     // waitForURL คืนค่าทันทีที่ URL เปลี่ยน แต่เนื้อหายังอาจวาดไม่เสร็จ ต้องรอหัวข้อจริงก่อน
@@ -90,7 +93,7 @@ async function main() {
     await page.getByRole("button", { name: "สร้างงาน" }).click();
 
     // สร้างเสร็จแล้วระบบพาไปหน้าตั้งค่างาน และสลับมางานใหม่ให้เลย
-    await page.waitForURL(/\/admin\/settings/, { timeout: 15000 });
+    await page.waitForURL(/\/admin-cms\/settings/, { timeout: 15000 });
     await page.waitForTimeout(1500);
     const settingsText = await page.locator("body").innerText();
     check("สร้างงานสำเร็จและสลับมางานใหม่ให้อัตโนมัติ", settingsText.includes(NEW_NAME));

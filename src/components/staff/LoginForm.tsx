@@ -1,13 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { loginAction } from "@/app/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { inputClass } from "@/components/form/Field";
 
 export function LoginForm({ redirectTo }: { redirectTo: string }) {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -25,8 +23,20 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
         setError(result.message);
         return;
       }
-      router.replace(redirectTo);
-      router.refresh();
+      /**
+       * ⚠️ ต้องโหลดหน้าใหม่ทั้งหน้า ห้ามใช้ router.replace() ของ Next.js ตรงนี้
+       *
+       *    เหตุผลที่ ① — หน้าล็อกอินกับหน้าเลือกส่วนงานเป็น "หน้าเดียวกัน" (/admin)
+       *    ต่างกันแค่ว่าล็อกอินแล้วหรือยัง ถ้าใช้ router.replace() ไปที่ path เดิม
+       *    เบราว์เซอร์ถือว่าไม่ได้เปลี่ยนหน้า จึงไม่วาดใหม่ คนล็อกอินสำเร็จแล้ว
+       *    แต่ยังเห็นฟอร์มค้างอยู่ นึกว่าล็อกอินไม่ผ่านแล้วกดซ้ำจนบัญชีโดนล็อก
+       *
+       *    เหตุผลที่ ② — การเปลี่ยนหน้าแบบไม่โหลดใหม่ทำให้ Service Worker
+       *    ของหน้าสแกนคุมหน้าไม่ได้ แล้วระบบทำงานตอนเน็ตหลุดใช้ไม่ได้ทั้งหมด
+       *
+       *    ช้ากว่าเล็กน้อยแต่เกิดครั้งเดียวตอนเริ่มงาน แลกกับความแน่นอนคุ้มกว่ามาก
+       */
+      window.location.assign(redirectTo);
     } catch {
       setError("เชื่อมต่อไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
     } finally {
