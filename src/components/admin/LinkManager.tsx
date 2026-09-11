@@ -246,13 +246,13 @@ export function LinkManager({
                         {copied === link.code ? "คัดลอกแล้ว" : "คัดลอก"}
                       </button>
                       <a
-                        href={`/api/admin/link-qr?id=${link.id}&format=png`}
+                        href={`/api/admin-cms/link-qr?id=${link.id}&format=png`}
                         className="min-h-9 inline-flex items-center px-2.5 rounded-[var(--radius-control)] border border-line text-xs text-ink-2 hover:bg-surface-2"
                       >
                         QR PNG
                       </a>
                       <a
-                        href={`/api/admin/link-qr?id=${link.id}&format=svg`}
+                        href={`/api/admin-cms/link-qr?id=${link.id}&format=svg`}
                         className="min-h-9 inline-flex items-center px-2.5 rounded-[var(--radius-control)] border border-line text-xs text-ink-2 hover:bg-surface-2"
                       >
                         QR SVG

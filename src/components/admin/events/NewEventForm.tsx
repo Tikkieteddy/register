@@ -75,7 +75,7 @@ export function NewEventForm() {
       setErrors(result.fieldErrors ?? {});
 
       if (result.ok) {
-        router.push("/admin/settings");
+        router.push("/admin-cms/settings");
         router.refresh();
       }
     });

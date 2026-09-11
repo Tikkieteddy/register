@@ -103,7 +103,7 @@ export default async function RegistrationsPage({
     next.delete("event");
     if (page > 1) next.set("page", String(page));
     const qs = next.toString();
-    return qs ? `/admin/registrations?${qs}` : "/admin/registrations";
+    return qs ? `/admin-cms/registrations?${qs}` : "/admin-cms/registrations";
   }
 
   const exportButton =
@@ -119,17 +119,17 @@ export default async function RegistrationsPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <a href={`/api/admin/export?format=xlsx&${filterQuery}`} className={exportButton}>
+          <a href={`/api/admin-cms/export?format=xlsx&${filterQuery}`} className={exportButton}>
             Excel (.xlsx)
           </a>
-          <a href={`/api/admin/export?format=csv&${filterQuery}`} className={exportButton}>
+          <a href={`/api/admin-cms/export?format=csv&${filterQuery}`} className={exportButton}>
             CSV
           </a>
-          <Link href="/admin/report" className={exportButton}>
+          <Link href="/admin-cms/report" className={exportButton}>
             รายงาน PDF
           </Link>
           <Link
-            href="/admin/registrations/new"
+            href="/admin-cms/registrations/new"
             className="min-h-11 inline-flex items-center px-4 rounded-[var(--radius-pill)] bg-primary text-primary-contrast text-sm font-semibold hover:bg-primary-dark"
           >
             เพิ่มด้วยมือ

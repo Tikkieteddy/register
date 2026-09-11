@@ -108,7 +108,7 @@ export function WalkInScreen({
             type="button"
             onClick={() =>
               window.open(
-                `/staff/badge/${done.qrToken}?format=lanyard&autoprint=1`,
+                `/admin-scan/badge/${done.qrToken}?format=lanyard&autoprint=1`,
                 "_blank",
                 "noopener",
               )
@@ -130,7 +130,7 @@ export function WalkInScreen({
           >
             ➕ ลงทะเบียนคนถัดไป
           </button>
-          <Link href="/staff" className="text-primary-dark underline text-sm">
+          <Link href="/admin-scan" className="text-primary-dark underline text-sm">
             กลับหน้าสแกน
           </Link>
         </div>
@@ -141,7 +141,7 @@ export function WalkInScreen({
   return (
     <main className="mx-auto w-full max-w-lg p-4 flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <Link href="/staff" className="text-primary-dark font-medium">
+        <Link href="/admin-scan" className="text-primary-dark font-medium">
           ← กลับ
         </Link>
         <h1 className="text-lg font-semibold text-ink">ลงทะเบียนหน้างาน</h1>

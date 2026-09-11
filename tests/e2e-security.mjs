@@ -107,7 +107,7 @@ async function main() {
        *    เทสต์จะอ่านข้อความเก่าได้ทันทีแล้วสรุปว่า "ยังไม่โดนบล็อก"
        *    ทั้งที่ระบบบล็อกไปแล้ว — เป็นการทดสอบที่ผ่าน/ไม่ผ่านโดยไม่ได้วัดของจริง
        */
-      await page.goto(`${BASE}/staff/login`, { waitUntil: "domcontentloaded" });
+      await page.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(900);
 
       await page.getByRole("textbox", { name: "อีเมล", exact: true }).fill(`probe${i}@example.com`);

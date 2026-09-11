@@ -1,36 +1,24 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
 /**
- * ลงทะเบียน Service Worker ให้หน้าเจ้าหน้าที่เปิดได้แม้เน็ตหลุด
+ * ลงทะเบียน Service Worker ให้หน้าสแกนเปิดได้แม้เน็ตหลุด
  *
  * เบราว์เซอร์อนุญาตให้ใช้ Service Worker เฉพาะ HTTPS (ยกเว้น localhost)
  * เหมือนกับกล้อง — ถ้าเข้าผ่าน http จะไม่ทำงานทั้งคู่
  */
 export function RegisterServiceWorker() {
-  const pathname = usePathname();
-
-  /**
-   * ผ่านหน้าล็อกอินมาแล้วหรือยัง
-   *
-   * ทุกหน้าใต้ /staff ที่ไม่ใช่หน้าล็อกอิน มีด่านตรวจสิทธิ์อยู่แล้ว
-   * การที่เรามาอยู่ตรงนี้ได้จึงแปลว่าล็อกอินผ่านแล้วแน่นอน
-   * ใช้วิธีนี้แทนการถามฐานข้อมูลซ้ำ เพราะได้คำตอบเดียวกันโดยไม่เพิ่มภาระ
-   */
-  const isSignedInArea = !pathname.startsWith("/staff/login");
-
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
 
     void (async () => {
       try {
-        await navigator.serviceWorker.register("/sw.js", { scope: "/staff" });
+        await navigator.serviceWorker.register("/sw.js", { scope: "/admin-scan" });
         const registration = await navigator.serviceWorker.ready;
 
         /**
-         * สั่งเก็บหน้าเจ้าหน้าที่ไว้ล่วงหน้า — ต้องทำหลังล็อกอินแล้วเท่านั้น
+         * สั่งเก็บหน้าสแกนไว้ล่วงหน้า เพื่อให้เปิดได้ตอนเน็ตหลุด
          *
          * ⚠️ จุดนี้เคยพลาดมาแล้ว และเป็นบั๊กที่จะเจอตอนเน็ตหลุดหน้างานเท่านั้น
          *
@@ -39,17 +27,16 @@ export function RegisterServiceWorker() {
          *    เงียบ ๆ ทุกหน้า พอเน็ตหลุดจริง เจ้าหน้าที่กดเมนู "ค้นหารายชื่อ"
          *    แล้วได้หน้าเปล่า ใช้อะไรไม่ได้เลย
          *
-         *    และต้องผูกกับ isSignedInArea ไม่ใช่สั่งครั้งเดียวตอนคอมโพเนนต์เกิด
-         *    เพราะโครงหน้านี้ครอบหน้าล็อกอินไว้ด้วย พอล็อกอินเสร็จแล้วเปลี่ยนหน้า
-         *    React ไม่ได้สร้างคอมโพเนนต์นี้ใหม่ ถ้าสั่งครั้งเดียวจะสั่งตอนยังไม่ล็อกอิน
-         *    แล้วไม่มีโอกาสสั่งอีกเลย
+         *    ตอนนี้คอมโพเนนต์นี้อยู่ในโครงของ /admin-scan เท่านั้น ซึ่งมีด่านตรวจสิทธิ์
+         *    อยู่แล้ว การที่มันทำงานได้จึงแปลว่าล็อกอินผ่านแล้วแน่นอน
+         *    (หน้าล็อกอินย้ายไปอยู่ที่ /admin ซึ่งเป็นคนละโครงกัน)
          */
-        if (isSignedInArea) registration.active?.postMessage("warm-up");
+        registration.active?.postMessage("warm-up");
       } catch {
         // ลงทะเบียนไม่สำเร็จก็ยังใช้งานออนไลน์ได้ตามปกติ
       }
     })();
-  }, [isSignedInArea]);
+  }, []);
 
   return null;
 }

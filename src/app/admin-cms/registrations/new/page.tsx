@@ -28,7 +28,7 @@ export default async function NewRegistrationPage() {
   return (
     <div className="flex flex-col gap-4">
       <nav className="text-sm">
-        <Link href="/admin/registrations" className="text-primary-dark hover:underline">
+        <Link href="/admin-cms/registrations" className="text-primary-dark hover:underline">
           ← กลับไปรายชื่อผู้ลงทะเบียน
         </Link>
       </nav>

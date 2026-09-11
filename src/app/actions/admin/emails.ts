@@ -76,7 +76,7 @@ export async function resendAllFailedAction(eventId: string): Promise<EmailActio
     after: { attempted: rows.length, sent },
   });
 
-  revalidatePath("/admin/emails");
+  revalidatePath("/admin-cms/emails");
   return {
     ok: sent > 0,
     message:

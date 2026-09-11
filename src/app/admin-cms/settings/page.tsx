@@ -67,7 +67,7 @@ export default async function SettingsPage({
         {TABS.map((tab) => (
           <Link
             key={tab.key}
-            href={`/admin/settings?tab=${tab.key}`}
+            href={`/admin-cms/settings?tab=${tab.key}`}
             aria-current={active === tab.key ? "page" : undefined}
             className={`min-h-11 inline-flex items-center px-4 rounded-[var(--radius-pill)] text-sm border ${
               active === tab.key
@@ -79,13 +79,13 @@ export default async function SettingsPage({
           </Link>
         ))}
         <Link
-          href="/admin/media"
+          href="/admin-cms/media"
           className="min-h-11 inline-flex items-center px-4 rounded-[var(--radius-pill)] text-sm border border-line text-ink-2 hover:bg-surface-2"
         >
           ภาพและสื่อ ↗
         </Link>
         <Link
-          href="/admin/links"
+          href="/admin-cms/links"
           className="min-h-11 inline-flex items-center px-4 rounded-[var(--radius-pill)] text-sm border border-line text-ink-2 hover:bg-surface-2"
         >
           ลิงก์ติดตามผล ↗

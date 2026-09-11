@@ -9,8 +9,8 @@ export const metadata: Metadata = { title: "สแกน QR — เจ้าห�
 
 export default async function StaffScanPage() {
   const session = await getSession();
-  if (!session) redirect("/staff/login?next=/staff");
-  if (!canScan(session)) redirect("/staff/login?next=/staff");
+  if (!session) redirect("/admin?next=/admin-scan");
+  if (!canScan(session)) redirect("/admin?next=/admin-scan");
 
   const slug = await getActiveEventSlug();
   if (!slug) {

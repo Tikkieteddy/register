@@ -81,7 +81,7 @@ export default async function EmailsPage({
   const tab = (value: string, label: string, count: number) => (
     <Link
       key={value}
-      href={value ? `/admin/emails?status=${value}` : "/admin/emails"}
+      href={value ? `/admin-cms/emails?status=${value}` : "/admin-cms/emails"}
       className={`min-h-11 inline-flex items-center gap-2 px-4 rounded-[var(--radius-pill)] text-sm border ${
         statusFilter === value || (!statusFilter && !value)
           ? "border-primary bg-primary-light text-primary-dark font-semibold"
@@ -144,7 +144,7 @@ export default async function EmailsPage({
                     <td className="p-3">
                       {row.registration_id ? (
                         <Link
-                          href={`/admin/registrations/${row.registration_id}`}
+                          href={`/admin-cms/registrations/${row.registration_id}`}
                           className="text-ink font-medium hover:text-primary-dark hover:underline"
                         >
                           {row.full_name ?? row.to_email}

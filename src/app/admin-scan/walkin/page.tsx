@@ -9,13 +9,13 @@ export const metadata: Metadata = { title: "ลงทะเบียนหน้
 
 export default async function StaffWalkInPage() {
   const session = await getSession();
-  if (!canScan(session) || !session) redirect("/staff/login?next=/staff/walkin");
+  if (!canScan(session) || !session) redirect("/admin?next=/admin-scan/walkin");
 
   const slug = await getActiveEventSlug();
-  if (!slug) redirect("/staff");
+  if (!slug) redirect("/admin-scan");
 
   const data = await getEventBySlug(slug);
-  if (!data) redirect("/staff");
+  if (!data) redirect("/admin-scan");
 
   // ใช้ตัวเลือกอาชีพชุดเดียวกับฟอร์มออนไลน์ จะได้ทำรายงานรวมกันได้
   const questions = await getFormQuestions(data.event.id);

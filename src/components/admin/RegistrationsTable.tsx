@@ -120,7 +120,7 @@ export function RegistrationsTable({
               ส่งอีเมลซ้ำ
             </button>
             <a
-              href={`/api/admin/export?format=xlsx&${filterQuery}${[...selected]
+              href={`/api/admin-cms/export?format=xlsx&${filterQuery}${[...selected]
                 .map((id) => `&id=${id}`)
                 .join("")}`}
               className="min-h-11 inline-flex items-center px-4 rounded-[var(--radius-pill)] border border-line text-ink-2 text-sm hover:bg-surface-2"
@@ -206,7 +206,7 @@ export function RegistrationsTable({
                   </td>
                   <td className="p-3">
                     <Link
-                      href={`/admin/registrations/${row.id}`}
+                      href={`/admin-cms/registrations/${row.id}`}
                       className="text-ink font-medium hover:text-primary-dark hover:underline"
                     >
                       {row.fullName}

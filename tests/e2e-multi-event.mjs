@@ -66,7 +66,7 @@ async function main() {
 
     /* ---------- ② สร้างงานใหม่ ---------- */
     console.log("\n② สร้างงานใหม่จากหลังบ้าน");
-    await page.goto(`${BASE}/staff/login?next=/admin/events`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${BASE}/admin?next=/admin-cms/events`, { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1500);
     await page.getByRole("textbox", { name: "อีเมล", exact: true }).fill(ADMIN_EMAIL);
     await page.locator('input[type="password"]').fill(ADMIN_PASSWORD);
@@ -97,7 +97,7 @@ async function main() {
 
     /* ---------- ③ สลับงาน ---------- */
     console.log("\n③ สลับงานที่กำลังจัดการ");
-    await page.goto(`${BASE}/admin/events`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${BASE}/admin-cms/events`, { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1000);
 
     check(
@@ -114,7 +114,7 @@ async function main() {
     await page.waitForTimeout(2500);
 
     // ไปหน้าอื่นแล้วต้องยังเป็นงานเดิมที่เลือกไว้ (พิสูจน์ว่าคุกกี้ทำงาน ไม่ใช่แค่หน้าเดียว)
-    await page.goto(`${BASE}/admin/registrations`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${BASE}/admin-cms/registrations`, { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1000);
     const afterSwitch = await page.locator("body").innerText();
     check(

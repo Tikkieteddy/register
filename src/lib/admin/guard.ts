@@ -10,8 +10,9 @@ import { getSession, isAdmin, type SessionUser } from "@/lib/auth/session";
  */
 export async function requireAdmin(): Promise<SessionUser> {
   const user = await getSession();
-  if (!user) redirect("/staff/login?next=/admin");
-  if (!isAdmin(user)) redirect("/staff?denied=admin");
+  if (!user) redirect("/admin?next=/admin-cms");
+  // มีสิทธิ์เข้าระบบ แต่ไม่ใช่ผู้ดูแล — ส่งกลับหน้าเลือกทางเข้า ซึ่งจะบอกเองว่าเข้าอะไรได้บ้าง
+  if (!isAdmin(user)) redirect("/admin?denied=cms");
   return user;
 }
 

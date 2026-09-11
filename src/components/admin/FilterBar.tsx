@@ -34,7 +34,7 @@ export function FilterBar({
     else next.delete(key);
     // เปลี่ยนตัวกรองแล้วต้องกลับไปหน้าแรกเสมอ ไม่งั้นจะค้างอยู่หน้า 7 ของผลลัพธ์ที่มี 2 หน้า
     next.delete("page");
-    router.push(`/admin/registrations?${next.toString()}`);
+    router.push(`/admin-cms/registrations?${next.toString()}`);
   }
 
   const hasFilter = ["q", "checkin", "session", "email", "source", "occupation", "from", "to"].some(
@@ -172,7 +172,7 @@ export function FilterBar({
         {hasFilter ? (
           <button
             type="button"
-            onClick={() => router.push("/admin/registrations")}
+            onClick={() => router.push("/admin-cms/registrations")}
             className="text-sm text-primary-dark hover:underline"
           >
             ล้างตัวกรองทั้งหมด

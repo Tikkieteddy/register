@@ -126,7 +126,7 @@ function EmptyState() {
         ผู้ดูแลระบบสามารถสร้างงานใหม่และเปลี่ยนสถานะเป็น “เผยแพร่แล้ว” เพื่อให้งานปรากฏบนหน้านี้
       </p>
       <Link
-        href="/admin/events"
+        href="/admin-cms/events"
         className="self-center mt-2 inline-flex items-center min-h-11 px-6 rounded-[var(--radius-pill)]
           border border-primary text-primary-dark hover:bg-primary-light transition-colors"
       >

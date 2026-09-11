@@ -8,10 +8,10 @@ export const metadata: Metadata = { title: "ค้นหารายชื่อ
 
 export default async function StaffSearchPage() {
   const session = await getSession();
-  if (!canScan(session) || !session) redirect("/staff/login?next=/staff/search");
+  if (!canScan(session) || !session) redirect("/admin?next=/admin-scan/search");
 
   const slug = await getActiveEventSlug();
-  if (!slug) redirect("/staff");
+  if (!slug) redirect("/admin-scan");
 
   return <SearchScreen eventSlug={slug} staffName={session.fullName} />;
 }

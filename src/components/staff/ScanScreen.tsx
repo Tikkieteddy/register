@@ -201,7 +201,7 @@ export function ScanScreen({
       // บันทึกประวัติการพิมพ์เป็นข้อมูลประกอบ ถ้าส่งไม่สำเร็จก็ต้องพิมพ์บัตรได้อยู่ดี
       void recordBadgePrintAction({ qrToken: token, format, isReprint }).catch(() => {});
     }
-    window.open(`/staff/badge/${token}?format=${format}&autoprint=1`, "_blank", "noopener");
+    window.open(`/admin-scan/badge/${token}?format=${format}&autoprint=1`, "_blank", "noopener");
   }
 
   const percentText = stats ? `${stats.percent}%` : "-";
@@ -265,8 +265,8 @@ export function ScanScreen({
               setResult(null);
               setPrinting(null);
             }}
-            onSearch={() => router.push("/staff/search")}
-            onWalkIn={() => router.push("/staff/walkin")}
+            onSearch={() => router.push("/admin-scan/search")}
+            onWalkIn={() => router.push("/admin-scan/walkin")}
           />
         ) : (
           <>
@@ -280,14 +280,14 @@ export function ScanScreen({
         {/* ทางเลือกสำรอง */}
         <div className="grid grid-cols-2 gap-2">
           <Link
-            href="/staff/search"
+            href="/admin-scan/search"
             className="min-h-[var(--control-height)] flex items-center justify-center gap-2 rounded-[var(--radius-pill)]
               border border-line-strong bg-surface text-ink-2 font-medium"
           >
             🔍 ค้นหารายชื่อ
           </Link>
           <Link
-            href="/staff/walkin"
+            href="/admin-scan/walkin"
             className="min-h-[var(--control-height)] flex items-center justify-center gap-2 rounded-[var(--radius-pill)]
               border border-line-strong bg-surface text-ink-2 font-medium"
           >

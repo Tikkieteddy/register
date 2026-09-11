@@ -114,7 +114,7 @@ export async function uploadMediaAction(formData: FormData): Promise<MediaResult
     after: { type: rawType, sizeBytes: processed.sizeBytes, fileName: file.name },
   });
 
-  revalidatePath("/admin/media");
+  revalidatePath("/admin-cms/media");
   return {
     ok: true,
     message: "อัปโหลดเรียบร้อย — ระบบแปลงเป็น WebP และ AVIF พร้อมย่อหลายขนาดให้แล้ว",
@@ -152,7 +152,7 @@ export async function updateMediaMetaAction(input: {
     after: { altTextTh: input.altTextTh, sortOrder: input.sortOrder },
   });
 
-  revalidatePath("/admin/media");
+  revalidatePath("/admin-cms/media");
   return { ok: true, message: "บันทึกข้อมูลภาพเรียบร้อย" };
 }
 
@@ -178,7 +178,7 @@ export async function deleteMediaAction(id: string): Promise<MediaResult> {
     before: { type: row.type, originalUrl: row.originalUrl },
   });
 
-  revalidatePath("/admin/media");
+  revalidatePath("/admin-cms/media");
   return {
     ok: true,
     message: "นำภาพออกจากระบบแล้ว (ไฟล์ยังอยู่ในที่เก็บ เผื่ออีเมลเก่าที่ส่งไปแล้วอ้างถึงอยู่)",

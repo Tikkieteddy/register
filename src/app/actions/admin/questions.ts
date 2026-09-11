@@ -69,7 +69,7 @@ export async function updateQuestionAction(input: {
     },
   });
 
-  revalidatePath("/admin/settings");
+  revalidatePath("/admin-cms/settings");
   return { ok: true, message: "บันทึกคำถามเรียบร้อย" };
 }
 
@@ -124,7 +124,7 @@ export async function addOptionAction(input: {
     after: { questionId: input.questionId, value: finalValue, labelTh: label },
   });
 
-  revalidatePath("/admin/settings");
+  revalidatePath("/admin-cms/settings");
   return { ok: true, message: `เพิ่มตัวเลือก “${label}” เรียบร้อย` };
 }
 
@@ -163,6 +163,6 @@ export async function updateOptionAction(input: {
     after: { labelTh: input.labelTh, isActive: input.isActive, sortOrder: input.sortOrder },
   });
 
-  revalidatePath("/admin/settings");
+  revalidatePath("/admin-cms/settings");
   return { ok: true, message: "บันทึกตัวเลือกเรียบร้อย" };
 }

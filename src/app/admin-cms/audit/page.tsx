@@ -98,7 +98,7 @@ export default async function AuditPage({
 
       <div className="flex flex-wrap gap-2">
         <Link
-          href="/admin/audit"
+          href="/admin-cms/audit"
           className={`min-h-11 inline-flex items-center px-4 rounded-[var(--radius-pill)] text-sm border ${
             !actionFilter
               ? "border-primary bg-primary-light text-primary-dark font-semibold"
@@ -110,7 +110,7 @@ export default async function AuditPage({
         {actions.map((row) => (
           <Link
             key={row.action}
-            href={`/admin/audit?action=${row.action}`}
+            href={`/admin-cms/audit?action=${row.action}`}
             className={`min-h-11 inline-flex items-center px-4 rounded-[var(--radius-pill)] text-sm border ${
               actionFilter === row.action
                 ? "border-primary bg-primary-light text-primary-dark font-semibold"
@@ -191,7 +191,7 @@ export default async function AuditPage({
         total={total}
         perPage={PER_PAGE}
         makeHref={(next) =>
-          `/admin/audit?${new URLSearchParams({
+          `/admin-cms/audit?${new URLSearchParams({
             ...(actionFilter ? { action: actionFilter } : {}),
             ...(next > 1 ? { page: String(next) } : {}),
           }).toString()}`

@@ -169,21 +169,21 @@ try {
   console.log("\nA3 ปิดบัญชีเจ้าหน้าที่แล้วต้องใช้งานต่อไม่ได้ทันที");
   const ctx = await b.newContext();
   const p = await ctx.newPage();
-  await p.goto(`${BASE}/staff/login`, { waitUntil: "domcontentloaded" });
-  await p.getByRole("heading", { name: "เข้าสู่ระบบเจ้าหน้าที่" }).waitFor({ timeout: 20000 });
+  await p.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
+  await p.getByRole("heading", { name: "เข้าสู่ระบบ", exact: true }).waitFor({ timeout: 20000 });
   await p.waitForTimeout(1500);
   await p.getByLabel("อีเมล").fill("staff@example.com");
   await p.getByLabel("รหัสผ่าน", { exact: true }).fill("staff-dev-1234");
   await p.getByRole("button", { name: "เข้าสู่ระบบ" }).click();
-  await p.waitForURL(/\/staff(\?|$)/, { timeout: 25000 });
-  check("ล็อกอินเข้าหน้าเจ้าหน้าที่ได้ตามปกติ", /\/staff/.test(p.url()), p.url());
+  await p.waitForURL(/\/admin(-scan)?(\?|$)/, { timeout: 25000 });
+  check("ล็อกอินสำเร็จ ไม่ค้างอยู่หน้าล็อกอิน", !/\/admin\/?$/.test(p.url()) || p.url().includes("next="), p.url());
 
   // ผู้ดูแลปิดบัญชีระหว่างที่เจ้าหน้าที่ยังเปิดหน้าค้างอยู่ (คุกกี้ยังไม่หมดอายุ)
   await sql`update users set is_active = false where email = 'staff@example.com'`;
-  await p.goto(`${BASE}/staff/search`, { waitUntil: "domcontentloaded" });
+  await p.goto(`${BASE}/admin-scan/search`, { waitUntil: "domcontentloaded" });
   await p.waitForTimeout(1500);
   check("โหลดหน้าใหม่แล้วถูกเด้งไปหน้าล็อกอินทันที",
-    /\/staff\/login/.test(p.url()), p.url());
+    /\/admin(\?|\/?$)/.test(p.url()), p.url());
   await sql`update users set is_active = true where email = 'staff@example.com'`;
 
   /* ---------------- A3ก — session ต้องไม่ปนกันข้ามคำขอ ---------------- */
@@ -201,8 +201,8 @@ try {
    */
   const adminCtx = await b.newContext();
   const ap = await adminCtx.newPage();
-  await ap.goto(`${BASE}/staff/login`, { waitUntil: "domcontentloaded" });
-  await ap.getByRole("heading", { name: "เข้าสู่ระบบเจ้าหน้าที่" }).waitFor({ timeout: 20000 });
+  await ap.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
+  await ap.getByRole("heading", { name: "เข้าสู่ระบบ", exact: true }).waitFor({ timeout: 20000 });
   await ap.waitForTimeout(1500);
   await ap.getByLabel("อีเมล").fill("admin@example.com");
   await ap.getByLabel("รหัสผ่าน", { exact: true }).fill("admin-dev-1234");
@@ -211,20 +211,20 @@ try {
 
   const ADMIN_PAGES = [
     "/admin",
-    "/admin/registrations",
-    "/admin/emails",
-    "/admin/links",
-    "/admin/media",
-    "/admin/settings",
-    "/admin/events",
-    "/admin/audit",
-    "/admin/report",
+    "/admin-cms/registrations",
+    "/admin-cms/emails",
+    "/admin-cms/links",
+    "/admin-cms/media",
+    "/admin-cms/settings",
+    "/admin-cms/events",
+    "/admin-cms/audit",
+    "/admin-cms/report",
   ];
   let bounced = 0;
   for (const path of ADMIN_PAGES) {
     await ap.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
     await ap.waitForTimeout(500);
-    if (ap.url().includes("/staff/login")) bounced++;
+    if (ap.url().includes("/admin")) bounced++;
   }
   check(`เข้าหน้าหลังบ้านได้ครบทั้ง ${ADMIN_PAGES.length} หน้า`, bounced === 0,
     `ถูกเด้งออก ${bounced} หน้า`);

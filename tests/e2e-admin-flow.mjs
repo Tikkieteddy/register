@@ -30,28 +30,31 @@ const log = (ok, m) => { if (!ok) fail++; console.log(`  ${ok ? "✅" : "❌"} $
 async function login(email, password) {
   // ล้าง session เดิมก่อนเสมอ ไม่งั้นหน้าล็อกอินจะเด้งออกทันทีเมื่อยังล็อกอินค้างอยู่
   await ctx.clearCookies();
-  await p.goto(`${BASE}/staff/login`, { waitUntil: "domcontentloaded" });
-  await p.getByRole("heading", { name: "เข้าสู่ระบบเจ้าหน้าที่" }).waitFor({ timeout: 30000 });
+  await p.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
+  await p.getByRole("heading", { name: "เข้าสู่ระบบ", exact: true }).waitFor({ timeout: 30000 });
   await p.waitForTimeout(1200);
   await p.getByLabel("อีเมล").fill(email);
   await p.getByLabel("รหัสผ่าน", { exact: true }).fill(password);
   await p.getByRole("button", { name: "เข้าสู่ระบบ" }).click();
   await p
-    .waitForFunction(() => !location.pathname.startsWith("/staff/login"), null, { timeout: 30000 })
+    .waitForFunction(() => document.body.innerText.includes("เลือกส่วนที่ต้องการใช้งาน"), null, { timeout: 30000 })
     .catch(() => {});
 }
 
 // ---------- ① เจ้าหน้าที่ธรรมดาต้องเข้าหลังบ้านไม่ได้ ----------
 console.log("\n① สิทธิ์การเข้าถึง");
 await login("staff@example.com", "staff-dev-1234");
-await p.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
+await p.goto(`${BASE}/admin-cms`, { waitUntil: "domcontentloaded" });
 await p.waitForTimeout(1500);
-log(!p.url().includes("/admin"), "บัญชีเจ้าหน้าที่เข้าหลังบ้านไม่ได้ ถูกเด้งออก");
+log(
+  p.url().includes("/admin?denied=cms"),
+  "บัญชีเจ้าหน้าที่เข้าระบบจัดการงานไม่ได้ ถูกพากลับหน้าเลือกพร้อมคำอธิบาย",
+);
 
 // ---------- ② ผู้ดูแลเข้าได้ และ Dashboard แสดงครบ ----------
 console.log("\n② Dashboard");
 await login("admin@example.com", "admin-dev-1234");
-await p.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
+await p.goto(`${BASE}/admin-cms`, { waitUntil: "domcontentloaded" });
 await p.getByRole("heading", { name: "Dashboard" }).waitFor({ timeout: 45000 });
 
 const chartCount = await p.locator("h3").filter({ hasText: /.+/ }).count();
@@ -63,7 +66,7 @@ log(totalNumber > 0, `ตัวเลขสรุปมีข้อมูลจ�
 
 // ---------- ③ ค้นหาและกรองรายชื่อ ----------
 console.log("\n③ รายชื่อผู้ลงทะเบียน");
-await p.goto(`${BASE}/admin/registrations`, { waitUntil: "domcontentloaded" });
+await p.goto(`${BASE}/admin-cms/registrations`, { waitUntil: "domcontentloaded" });
 await p.getByRole("heading", { name: "รายชื่อผู้ลงทะเบียน" }).waitFor({ timeout: 45000 });
 const allRows = await p.locator("table tbody tr").count();
 log(allRows > 1, `แสดงรายชื่อได้ ${allRows} แถว`);
@@ -77,7 +80,7 @@ await p.waitForTimeout(2000);
 const searchRows = await p.locator("table tbody tr").count();
 log(searchRows > 0 && searchRows <= allRows, `ค้นหาด้วยชื่อ "${searchTerm}" ได้ ${searchRows} แถว`);
 
-await p.goto(`${BASE}/admin/registrations?checkin=in`, { waitUntil: "domcontentloaded" });
+await p.goto(`${BASE}/admin-cms/registrations?checkin=in`, { waitUntil: "domcontentloaded" });
 await p.getByRole("heading", { name: "รายชื่อผู้ลงทะเบียน" }).waitFor({ timeout: 45000 });
 const checkedRows = await p.locator("table tbody tr").count();
 const badges = await p.getByText("เช็คอินแล้ว", { exact: true }).count();
@@ -85,7 +88,7 @@ log(checkedRows > 0 && badges >= checkedRows, `กรอง "เช็คอิ�
 
 // ---------- ④ Export ----------
 console.log("\n④ ส่งออกข้อมูล");
-await p.goto(`${BASE}/admin/registrations`, { waitUntil: "domcontentloaded" });
+await p.goto(`${BASE}/admin-cms/registrations`, { waitUntil: "domcontentloaded" });
 await p.getByRole("heading", { name: "รายชื่อผู้ลงทะเบียน" }).waitFor({ timeout: 45000 });
 
 for (const [label, ext] of [["Excel (.xlsx)", "xlsx"], ["CSV", "csv"]]) {
@@ -108,7 +111,7 @@ log(csv.toString("utf8").includes("รหัสลงทะเบียน"), "�
 // ---------- ⑤ เพิ่มผู้ลงทะเบียนด้วยมือ ----------
 console.log("\n⑤ เพิ่มด้วยมือ");
 const stamp = Date.now();
-await p.goto(`${BASE}/admin/registrations/new`, { waitUntil: "domcontentloaded" });
+await p.goto(`${BASE}/admin-cms/registrations/new`, { waitUntil: "domcontentloaded" });
 await p.getByRole("heading", { name: "เพิ่มผู้ลงทะเบียนด้วยมือ" }).waitFor({ timeout: 45000 });
 await p.waitForTimeout(1200);
 await p.getByRole("textbox", { name: "ชื่อ", exact: true }).fill("วีไอพี");
@@ -124,8 +127,8 @@ log(consentBlocked > 0, "บันทึกไม่ได้ถ้ายัง�
 
 await p.getByText("ยืนยันว่าได้แจ้งข้อความความยินยอมตาม PDPA").click();
 await p.getByRole("button", { name: "บันทึกและออกตั๋ว" }).click();
-await p.waitForURL(/\/admin\/registrations\/[0-9a-f-]{36}/, { timeout: 30000 }).catch(() => {});
-const onDetail = /\/admin\/registrations\/[0-9a-f-]{36}/.test(p.url());
+await p.waitForURL(/\/admin-cms\/registrations\/[0-9a-f-]{36}/, { timeout: 30000 }).catch(() => {});
+const onDetail = /\/admin-cms\/registrations\/[0-9a-f-]{36}/.test(p.url());
 log(onDetail, "เพิ่มผู้ลงทะเบียนด้วยมือสำเร็จ และเข้าหน้ารายละเอียดทันที");
 
 const detailUrl = p.url();
@@ -140,7 +143,7 @@ await p.waitForTimeout(2500);
 log((await p.getByText("บันทึกการแก้ไขเรียบร้อย").count()) > 0, "แก้ไขชื่อผู้ลงทะเบียนสำเร็จ");
 
 // อ่านที่นั่งคงเหลือก่อนยกเลิก
-await p.goto(`${BASE}/admin/settings?tab=quota`, { waitUntil: "domcontentloaded" });
+await p.goto(`${BASE}/admin-cms/settings?tab=quota`, { waitUntil: "domcontentloaded" });
 await p.getByRole("heading", { name: "ตั้งค่างาน" }).waitFor({ timeout: 45000 });
 const beforeText = await p.getByText(/รวมทั้งงาน .* คงเหลือ/).textContent();
 const beforeRemaining = Number((beforeText ?? "").match(/คงเหลือ\s*([0-9]+)/)?.[1] ?? "0");
@@ -154,7 +157,7 @@ await p.getByRole("button", { name: "ยกเลิกการลงทะเ�
 await p.waitForTimeout(3000);
 log((await p.getByText(/ยกเลิกแล้ว 1 รายการ/).count()) > 0, "ยกเลิกการลงทะเบียนสำเร็จ");
 
-await p.goto(`${BASE}/admin/settings?tab=quota`, { waitUntil: "domcontentloaded" });
+await p.goto(`${BASE}/admin-cms/settings?tab=quota`, { waitUntil: "domcontentloaded" });
 await p.getByRole("heading", { name: "ตั้งค่างาน" }).waitFor({ timeout: 45000 });
 const afterText = await p.getByText(/รวมทั้งงาน .* คงเหลือ/).textContent();
 const afterRemaining = Number((afterText ?? "").match(/คงเหลือ\s*([0-9]+)/)?.[1] ?? "0");
@@ -171,7 +174,7 @@ log((await p.getByText(/เพราะมีคนจองไปแล้ว/)
 
 // ---------- ⑧ ลิงก์ติดตามผล ----------
 console.log("\n⑧ ลิงก์ติดตามผล");
-await p.goto(`${BASE}/admin/links`, { waitUntil: "domcontentloaded" });
+await p.goto(`${BASE}/admin-cms/links`, { waitUntil: "domcontentloaded" });
 await p.getByRole("heading", { name: "ลิงก์ติดตามผล" }).waitFor({ timeout: 45000 });
 await p.waitForTimeout(1200);
 await p.getByRole("button", { name: "สร้างลิงก์ใหม่" }).click();
@@ -195,7 +198,7 @@ log((redirect?.url() ?? "").includes(`ref=${code}`), "ลิงก์ที่�
 
 // ---------- ⑨ audit log ----------
 console.log("\n⑨ บันทึกการใช้งาน");
-await p.goto(`${BASE}/admin/audit`, { waitUntil: "domcontentloaded" });
+await p.goto(`${BASE}/admin-cms/audit`, { waitUntil: "domcontentloaded" });
 await p.getByRole("heading", { name: "บันทึกการใช้งาน" }).waitFor({ timeout: 45000 });
 for (const action of ["ส่งออกข้อมูล", "ยกเลิกการลงทะเบียน", "สร้างลิงก์ติดตามผล", "เปิดดูรายชื่อ"]) {
   log((await p.getByText(action, { exact: true }).count()) > 0, `audit log บันทึก "${action}" ไว้แล้ว`);

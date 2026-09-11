@@ -46,7 +46,7 @@ export function NewRegistrationForm({
       setErrors(result.ok ? {} : (result.fieldErrors ?? {}));
       setNotice({ ok: result.ok, text: result.message });
       if (result.ok && result.registrationId) {
-        router.push(`/admin/registrations/${result.registrationId}`);
+        router.push(`/admin-cms/registrations/${result.registrationId}`);
       }
     });
   }

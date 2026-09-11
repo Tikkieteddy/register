@@ -65,7 +65,7 @@ export async function updateEventInfoAction(input: {
     after: { nameTh: input.nameTh, venueName: input.venueName, organizerName: input.organizerName },
   });
 
-  revalidatePath("/admin/settings");
+  revalidatePath("/admin-cms/settings");
   return { ok: true, message: "บันทึกข้อมูลงานเรียบร้อย" };
 }
 
@@ -155,7 +155,7 @@ export async function updateQuotaAction(input: {
     after: input.sessions,
   });
 
-  revalidatePath("/admin/settings");
+  revalidatePath("/admin-cms/settings");
   revalidatePath("/admin");
   return { ok: true, message: "บันทึกการตั้งค่าที่นั่งเรียบร้อย" };
 }
@@ -235,7 +235,7 @@ export async function saveUserAction(input: {
       after: { email, role: input.role, canScan: input.canScan, isActive: input.isActive },
     });
 
-    revalidatePath("/admin/settings");
+    revalidatePath("/admin-cms/settings");
     return { ok: true, message: "บันทึกบัญชีผู้ใช้เรียบร้อย" };
   }
 
@@ -259,7 +259,7 @@ export async function saveUserAction(input: {
     after: { email, role: input.role },
   });
 
-  revalidatePath("/admin/settings");
+  revalidatePath("/admin-cms/settings");
   return { ok: true, message: `สร้างบัญชี ${email} เรียบร้อย` };
 }
 
@@ -318,7 +318,7 @@ export async function updatePrivacyAction(input: {
     after: { privacyPolicyVersion: version, dataRetentionDays },
   });
 
-  revalidatePath("/admin/settings");
+  revalidatePath("/admin-cms/settings");
   return {
     ok: true,
     message:

@@ -7,12 +7,12 @@
  * ⚠️ ไม่แคชคำขอที่ไม่ใช่ GET และไม่แคช server action เด็ดขาด
  *    ไม่งั้นการเช็คอินจะถูกตอบด้วยข้อมูลเก่าจากแคช
  */
-const CACHE = "staff-shell-v2";
+const CACHE = "scan-shell-v3";
 
 /**
  * ไฟล์ที่เก็บได้ตั้งแต่ตอนติดตั้ง — ต้องเป็นไฟล์ที่ไม่ต้องล็อกอินเท่านั้น
  *
- * ⚠️ ห้ามใส่หน้า /staff ลงตรงนี้ และนี่คือเหตุผล
+ * ⚠️ ห้ามใส่หน้า /admin-scan ลงตรงนี้ และนี่คือเหตุผล
  *
  *    ตอน Service Worker ติดตั้ง ผู้ใช้มักยังอยู่หน้าล็อกอิน ยังไม่มีสิทธิ์เข้าหน้าเหล่านั้น
  *    เซิร์ฟเวอร์จึงตอบด้วยการส่งต่อไปหน้าล็อกอิน (redirect) ซึ่ง cache.add() ปฏิเสธ
@@ -24,7 +24,7 @@ const CACHE = "staff-shell-v2";
 const PUBLIC_SHELL = ["/icon.svg", "/manifest.webmanifest"];
 
 /** หน้าที่เจ้าหน้าที่ต้องใช้หน้างาน — เก็บหลังล็อกอินแล้วเท่านั้น */
-const STAFF_PAGES = ["/staff", "/staff/search", "/staff/walkin"];
+const SCAN_PAGES = ["/admin-scan", "/admin-scan/search", "/admin-scan/walkin"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -45,7 +45,7 @@ self.addEventListener("install", (event) => {
 async function warmUp() {
   const cache = await caches.open(CACHE);
   await Promise.allSettled(
-    STAFF_PAGES.map(async (url) => {
+    SCAN_PAGES.map(async (url) => {
       const response = await fetch(url, { credentials: "same-origin" });
       // ถ้าถูกส่งต่อไปหน้าล็อกอิน แปลว่ายังไม่มีสิทธิ์ — อย่าเก็บหน้านั้นไว้
       // ไม่งั้นเวลาเน็ตหลุดจะได้หน้าล็อกอินแทนหน้าที่ต้องการ
@@ -76,7 +76,7 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (!url.pathname.startsWith("/staff") && !url.pathname.startsWith("/_next")) return;
+  if (!url.pathname.startsWith("/admin-scan") && !url.pathname.startsWith("/_next")) return;
 
   // network-first: ใช้ของสดก่อนเสมอ แล้วค่อยตกไปใช้แคชเมื่อเน็ตหลุด
   event.respondWith(
@@ -106,7 +106,7 @@ self.addEventListener("fetch", (event) => {
         }
         // ขอหน้าเว็บแต่ไม่มีในแคช — คืนหน้าสแกนที่แคชไว้แทนหน้า error ของเบราว์เซอร์
         if (request.mode === "navigate") {
-          const fallback = await caches.match("/staff");
+          const fallback = await caches.match("/admin-scan");
           if (fallback) return fallback;
         }
         return new Response("ออฟไลน์และไม่มีข้อมูลในแคช", {

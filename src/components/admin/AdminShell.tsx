@@ -14,14 +14,14 @@ import type { AdminEventOption } from "@/lib/admin/current-event";
  * จากมือถือระหว่างเดินทาง ถ้าปล่อยเมนูกางไว้จะกินพื้นที่จนอ่านตัวเลขไม่สะดวก
  */
 const NAV = [
-  { href: "/admin", label: "Dashboard", icon: "▦" },
-  { href: "/admin/registrations", label: "ผู้ลงทะเบียน", icon: "☰" },
-  { href: "/admin/emails", label: "จัดการอีเมล", icon: "✉" },
-  { href: "/admin/links", label: "ลิงก์ติดตามผล", icon: "⇗" },
-  { href: "/admin/media", label: "ภาพและสื่อ", icon: "▣" },
-  { href: "/admin/settings", label: "ตั้งค่างาน", icon: "⚙" },
-  { href: "/admin/events", label: "จัดการงาน", icon: "◈" },
-  { href: "/admin/audit", label: "บันทึกการใช้งาน", icon: "⏱" },
+  { href: "/admin-cms", label: "Dashboard", icon: "▦" },
+  { href: "/admin-cms/registrations", label: "ผู้ลงทะเบียน", icon: "☰" },
+  { href: "/admin-cms/emails", label: "จัดการอีเมล", icon: "✉" },
+  { href: "/admin-cms/links", label: "ลิงก์ติดตามผล", icon: "⇗" },
+  { href: "/admin-cms/media", label: "ภาพและสื่อ", icon: "▣" },
+  { href: "/admin-cms/settings", label: "ตั้งค่างาน", icon: "⚙" },
+  { href: "/admin-cms/events", label: "จัดการงาน", icon: "◈" },
+  { href: "/admin-cms/audit", label: "บันทึกการใช้งาน", icon: "⏱" },
 ] as const;
 
 export function AdminShell({
@@ -78,7 +78,7 @@ export function AdminShell({
         <nav className="flex flex-col gap-1 p-2">
           {NAV.map((item) => {
             const active =
-              item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
+              item.href === "/admin-cms" ? pathname === "/admin-cms" : pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}

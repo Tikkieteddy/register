@@ -95,7 +95,7 @@ export async function saveShareLinkAction(input: {
     });
   }
 
-  revalidatePath("/admin/links");
+  revalidatePath("/admin-cms/links");
   revalidatePath("/admin");
   return { ok: true, message: input.id ? "บันทึกลิงก์เรียบร้อย" : `สร้างลิงก์ /r/${code} เรียบร้อย` };
 }
@@ -123,6 +123,6 @@ export async function toggleShareLinkAction(id: string, isActive: boolean): Prom
     after: { isActive },
   });
 
-  revalidatePath("/admin/links");
+  revalidatePath("/admin-cms/links");
   return { ok: true, message: isActive ? "เปิดใช้งานลิงก์แล้ว" : "ปิดลิงก์แล้ว สถิติเดิมยังอยู่ครบ" };
 }

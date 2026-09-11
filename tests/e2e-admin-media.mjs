@@ -89,15 +89,15 @@ let fail = 0;
 const log = (ok, m) => { if (!ok) fail++; console.log(`  ${ok ? "✅" : "❌"} ${m}`); };
 
 await ctx.clearCookies();
-await p.goto(`${BASE}/staff/login`, { waitUntil: "domcontentloaded" });
-await p.getByRole("heading", { name: "เข้าสู่ระบบเจ้าหน้าที่" }).waitFor({ timeout: 30000 });
+await p.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
+await p.getByRole("heading", { name: "เข้าสู่ระบบ", exact: true }).waitFor({ timeout: 30000 });
 await p.waitForTimeout(1200);
 await p.getByLabel("อีเมล").fill("admin@example.com");
 await p.getByLabel("รหัสผ่าน", { exact: true }).fill("admin-dev-1234");
 await p.getByRole("button", { name: "เข้าสู่ระบบ" }).click();
-await p.waitForFunction(() => !location.pathname.startsWith("/staff/login"), null, { timeout: 30000 }).catch(() => {});
+await p.waitForFunction(() => document.body.innerText.includes("เลือกส่วนที่ต้องการใช้งาน"), null, { timeout: 30000 }).catch(() => {});
 
-await p.goto(`${BASE}/admin/media`, { waitUntil: "domcontentloaded" });
+await p.goto(`${BASE}/admin-cms/media`, { waitUntil: "domcontentloaded" });
 await p.getByRole("heading", { name: "ภาพและสื่อ" }).waitFor({ timeout: 45000 });
 await p.waitForTimeout(1200);
 

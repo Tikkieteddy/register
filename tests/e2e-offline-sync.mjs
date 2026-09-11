@@ -24,14 +24,19 @@ const log = (ok, m) => { if (!ok) fail++; console.log(`  ${ok ? "✅" : "❌"} $
 const BASE = "http://localhost:3100";
 
 // ---------- ล็อกอินและดาวน์โหลดรายชื่อขณะออนไลน์ ----------
-await p.goto(`${BASE}/staff/login`, { waitUntil: "domcontentloaded" });
-await p.getByRole("heading", { name: "เข้าสู่ระบบเจ้าหน้าที่" }).waitFor({ timeout: 20000 });
+await p.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
+await p.getByRole("heading", { name: "เข้าสู่ระบบ", exact: true }).waitFor({ timeout: 20000 });
 // รอให้ React ผูก event handler เสร็จก่อนพิมพ์
 // ถ้าพิมพ์เร็วเกินไป ค่าที่กรอกจะถูกล้างตอน hydrate แล้วฟอร์มจะส่งค่าว่าง
 await p.waitForTimeout(1500);
 await p.getByLabel("อีเมล").fill("staff@example.com");
 await p.getByLabel("รหัสผ่าน", { exact: true }).fill("staff-dev-1234");
 await p.getByRole("button", { name: "เข้าสู่ระบบ" }).click();
+/**
+ * หลังล็อกอินจะมาอยู่ที่หน้าเลือกส่วนงาน ต้องกดเข้าหน้าสแกนอีกทีหนึ่ง
+ * (บัญชีเดียวอาจเข้าได้ทั้งหน้าสแกนและระบบจัดการงาน ระบบจึงให้เจ้าตัวเลือกเอง)
+ */
+await p.getByRole("link", { name: /สแกนเช็คอินหน้างาน/ }).click({ timeout: 25000 });
 await p.getByText("เช็คอินแล้ว").waitFor({ timeout: 25000 });
 
 await p.getByRole("button", { name: "ดาวน์โหลดรายชื่อ" }).click();

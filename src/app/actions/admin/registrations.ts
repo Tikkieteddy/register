@@ -90,7 +90,7 @@ export async function cancelRegistrationsAction(
     }
   }
 
-  revalidatePath("/admin/registrations");
+  revalidatePath("/admin-cms/registrations");
   revalidatePath("/admin");
 
   return cancelled > 0
@@ -240,8 +240,8 @@ export async function updateRegistrationAction(input: {
     },
   });
 
-  revalidatePath(`/admin/registrations/${input.id}`);
-  revalidatePath("/admin/registrations");
+  revalidatePath(`/admin-cms/registrations/${input.id}`);
+  revalidatePath("/admin-cms/registrations");
   return { ok: true, message: "บันทึกการแก้ไขเรียบร้อย" };
 }
 
@@ -271,8 +271,8 @@ export async function resendEmailsAction(ids: string[]): Promise<ActionResult> {
     after: { count: ids.length, sent, failed },
   });
 
-  revalidatePath("/admin/emails");
-  revalidatePath("/admin/registrations");
+  revalidatePath("/admin-cms/emails");
+  revalidatePath("/admin-cms/registrations");
 
   if (failed === 0) return { ok: true, message: `ส่งอีเมลซ้ำสำเร็จ ${sent} ฉบับ` };
   return {
@@ -404,7 +404,7 @@ export async function createRegistrationAction(input: {
 
   if (input.sendEmail) await sendConfirmationEmail(created);
 
-  revalidatePath("/admin/registrations");
+  revalidatePath("/admin-cms/registrations");
   revalidatePath("/admin");
   return {
     ok: true,
@@ -466,7 +466,7 @@ export async function anonymizeRegistrationAction(id: string): Promise<ActionRes
     after: { registrationCode: before.registrationCode },
   });
 
-  revalidatePath("/admin/registrations");
+  revalidatePath("/admin-cms/registrations");
   return { ok: true, message: "ลบข้อมูลส่วนบุคคลเรียบร้อย สถิติในรายงานยังคงเดิม" };
 }
 

@@ -153,7 +153,7 @@ export function SearchScreen({ eventSlug, staffName }: { eventSlug: string; staf
 
       <main className="flex-1 mx-auto w-full max-w-lg p-4 flex flex-col gap-4">
         <div className="flex items-center gap-3">
-          <Link href="/staff" className="text-primary-dark font-medium">
+          <Link href="/admin-scan" className="text-primary-dark font-medium">
             ← กลับ
           </Link>
           <h1 className="text-lg font-semibold text-ink">ค้นหารายชื่อ</h1>
@@ -172,7 +172,7 @@ export function SearchScreen({ eventSlug, staffName }: { eventSlug: string; staf
               );
               if (hit) {
                 window.open(
-                  `/staff/badge/${hit.qrToken}?format=${format}&autoprint=1`,
+                  `/admin-scan/badge/${hit.qrToken}?format=${format}&autoprint=1`,
                   "_blank",
                   "noopener",
                 );
@@ -184,7 +184,7 @@ export function SearchScreen({ eventSlug, staffName }: { eventSlug: string; staf
               setHits([]);
             }}
             onSearch={() => setResult(null)}
-            onWalkIn={() => router.push("/staff/walkin")}
+            onWalkIn={() => router.push("/admin-scan/walkin")}
           />
         ) : (
           <>
@@ -212,7 +212,7 @@ export function SearchScreen({ eventSlug, staffName }: { eventSlug: string; staf
               <div className="text-center py-8 flex flex-col items-center gap-3">
                 <p className="text-ink-2">ไม่พบผู้ลงทะเบียนที่ตรงกับคำค้น</p>
                 <Link
-                  href="/staff/walkin"
+                  href="/admin-scan/walkin"
                   className="min-h-11 px-5 inline-flex items-center rounded-[var(--radius-pill)]
                     bg-primary text-primary-contrast font-semibold"
                 >

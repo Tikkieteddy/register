@@ -23,7 +23,7 @@ export const metadata: Metadata = { title: "พิมพ์บัตร" };
 
 export default async function BadgePage({ params, searchParams }: Props) {
   const session = await getSession();
-  if (!canScan(session)) redirect("/staff/login?next=/staff");
+  if (!canScan(session)) redirect("/admin?next=/admin-scan");
 
   const { token } = await params;
   const { format, autoprint } = await searchParams;
@@ -57,7 +57,7 @@ export default async function BadgePage({ params, searchParams }: Props) {
         </div>
         <div className="flex gap-2">
           <a
-            href={`/staff/badge/${token}?format=${isWristband ? "lanyard" : "wristband"}`}
+            href={`/admin-scan/badge/${token}?format=${isWristband ? "lanyard" : "wristband"}`}
             className="min-h-11 px-4 inline-flex items-center rounded-[var(--radius-pill)] border border-neutral-400 text-sm"
           >
             สลับเป็น{isWristband ? "บัตรห้อยคอ" : "ริสแบนด์"}
