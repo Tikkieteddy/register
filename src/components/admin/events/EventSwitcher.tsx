@@ -26,7 +26,7 @@ export function EventSwitcher({
   if (events.length < 2) return null;
 
   return (
-    <label className="flex flex-col gap-1">
+    <label className="flex flex-col gap-1" data-tour="cms-event-switcher">
       <span className="text-xs text-muted">งานที่กำลังจัดการ</span>
       <select
         value={currentSlug ?? ""}

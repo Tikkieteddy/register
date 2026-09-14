@@ -13,6 +13,8 @@ import {
 import { downloadAttendeesAction } from "@/app/actions/staff-sync";
 import { QrScanner } from "./QrScanner";
 import { ScanResult } from "./ScanResult";
+import { TourLauncher } from "@/components/tour/TourLauncher";
+import { SCAN_TOUR } from "@/components/tour/steps";
 import { ConnectionBar, useOnlineSync } from "./useOnlineSync";
 import {
   countAttendees,
@@ -281,6 +283,7 @@ export function ScanScreen({
         <div className="grid grid-cols-2 gap-2">
           <Link
             href="/admin-scan/search"
+            data-tour="scan-search"
             className="min-h-[var(--control-height)] flex items-center justify-center gap-2 rounded-[var(--radius-pill)]
               border border-line-strong bg-surface text-ink-2 font-medium"
           >
@@ -308,6 +311,7 @@ export function ScanScreen({
             </div>
             <button
               type="button"
+              data-tour="scan-download"
               onClick={() => void handleDownload()}
               disabled={downloading || !online}
               className="min-h-11 px-4 rounded-[var(--radius-pill)] border border-primary text-primary-dark
@@ -322,6 +326,15 @@ export function ScanScreen({
             </p>
           )}
         </section>
+
+        {/*
+          คำแนะนำสำหรับเจ้าหน้าที่ — สำคัญกว่าส่วนอื่นเพราะคนที่ใช้หน้านี้
+          มักเพิ่งมาถึงหน้างานวันนั้น ไม่มีเวลาอ่านคู่มือ และพลาดขั้นตอน
+          "ดาวน์โหลดรายชื่อก่อนเริ่มงาน" กันบ่อย ซึ่งทำให้ทำงานไม่ได้เลยตอนเน็ตหลุด
+        */}
+        <div className="flex justify-center pt-1">
+          <TourLauncher steps={SCAN_TOUR} storageKey="tour.scan.v1" />
+        </div>
       </main>
     </div>
   );

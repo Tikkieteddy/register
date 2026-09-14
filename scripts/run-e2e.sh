@@ -11,11 +11,25 @@ set -u
 BASE="${BASE_URL:-http://localhost:3100}"
 TESTS=(
   e2e-register-flow e2e-full-flow e2e-staff-flow e2e-offline-sync
-  e2e-admin-flow e2e-admin-media e2e-multi-event e2e-member-signup e2e-audit-fixes e2e-security
+  e2e-admin-flow e2e-admin-media e2e-multi-event e2e-member-signup e2e-tour e2e-audit-fixes e2e-security
 )
 tmp="$(mktemp -d)"
 failed=0
 skipped=0
+
+# ล้างตัวนับจำนวนครั้งก่อนเริ่มเสมอ
+#
+# ⚠️ จำเป็น ไม่ใช่ของแถม
+#    ระบบจำกัดจำนวนครั้งที่ล็อกอินและจองที่นั่งต่อหนึ่งที่อยู่เครือข่าย ซึ่งถูกต้อง
+#    แต่ชุดทดสอบทั้งชุดยิงมาจากเครื่องเดียว จึงชนเพดานของตัวเองระหว่างทาง
+#    แล้วเทสต์ช่วงท้ายจะล้มแบบไม่มีสาเหตุที่ชัดเจน ทั้งที่ระบบทำงานถูกต้องทุกอย่าง
+#    (เคยหลงหาสาเหตุผิดทางมาแล้วเพราะเรื่องนี้)
+node -e '
+  const { connect } = await import("./tests/db.mjs");
+  const sql = connect();
+  await sql`delete from rate_limits`;
+  await sql.end({ timeout: 5 });
+' --input-type=module 2>/dev/null || echo "  (ล้างตัวนับไม่สำเร็จ — ข้ามไปก่อน)"
 
 printf '\n🧪 ชุดทดสอบทั้งหมด (%s)\n\n' "$BASE"
 for t in "${TESTS[@]}"; do

@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { SiteCredit } from "@/components/site/SiteCredit";
+import { TourLauncher } from "@/components/tour/TourLauncher";
+import { CMS_TOUR } from "@/components/tour/steps";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { logoutAction } from "@/app/actions/auth";
@@ -84,6 +86,7 @@ export function AdminShell({
               <Link
                 key={item.href}
                 href={item.href}
+                data-tour={`cms-nav-${item.href.split("/").pop()}`}
                 onClick={() => setMenuOpen(false)}
                 aria-current={active ? "page" : undefined}
                 className={`flex items-center gap-2 rounded-[var(--radius-control)] px-3 py-2.5 text-sm transition-colors ${
@@ -101,7 +104,11 @@ export function AdminShell({
           })}
         </nav>
 
-        <div className="mt-auto p-3 border-t border-line">
+        <div className="mt-auto p-3 border-t border-line flex flex-col gap-1">
+          <TourLauncher steps={CMS_TOUR} storageKey="tour.cms.v1" className="self-start" />
+        </div>
+
+        <div className="p-3 border-t border-line">
           <p className="text-xs text-muted">เข้าสู่ระบบเป็น</p>
           <p className="text-sm text-ink font-medium truncate">{userName}</p>
           <form action={logoutAction} className="mt-2">

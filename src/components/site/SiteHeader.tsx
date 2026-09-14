@@ -113,6 +113,7 @@ export function SiteHeader({
             */}
             <Link
               href="/register"
+              data-tour="nav-signup"
               className="px-4 py-2 rounded-[var(--radius-pill)] text-sm border border-primary
                 text-primary-dark hover:bg-primary-light transition-colors"
             >
@@ -122,6 +123,7 @@ export function SiteHeader({
 
           <button
             type="button"
+            data-tour="nav-menu"
             onClick={() => setOpen((value) => !value)}
             aria-expanded={open}
             aria-controls="site-menu"

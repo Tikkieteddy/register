@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
+import { TourLauncher } from "@/components/tour/TourLauncher";
+import { PUBLIC_TOUR } from "@/components/tour/steps";
 import { getFeaturedEvent, listPublishedEvents, type EventCard, type RegistrationState } from "@/db/queries";
 import { formatDateRange, formatTimeRange } from "@/lib/datetime";
 
@@ -60,7 +62,11 @@ export default async function HomePage() {
           <EmptyState />
         ) : (
           <>
-            <section aria-labelledby="upcoming-heading" className="flex flex-col gap-4">
+            <section
+              aria-labelledby="upcoming-heading"
+              data-tour="event-list"
+              className="flex flex-col gap-4"
+            >
               <SectionHeading id="upcoming-heading" count={upcoming.length}>
                 กำลังเปิดรับสมัคร
               </SectionHeading>
@@ -93,6 +99,14 @@ export default async function HomePage() {
           </>
         )}
       </main>
+
+      {/*
+        คำแนะนำสำหรับคนเข้าครั้งแรก — วางที่หน้าแรกเพราะเป็นประตูทางเข้าของทุกคน
+        และปุ่มที่จะชี้ (รายการงาน · สมัครสมาชิก · เมนู) อยู่ในหน้านี้ทั้งหมด
+      */}
+      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 pb-4 flex justify-center">
+        <TourLauncher steps={PUBLIC_TOUR} storageKey="tour.public.v1" />
+      </div>
 
       <SiteFooter siteName={SITE_NAME} eventSlug={featured?.slug} />
     </div>

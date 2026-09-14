@@ -115,7 +115,11 @@ export function ConnectionBar({
         : "bg-success-bg text-success";
 
   return (
-    <div className={`${tone} px-4 py-2 flex items-center gap-2 text-sm`} aria-live="polite">
+    <div
+      className={`${tone} px-4 py-2 flex items-center gap-2 text-sm`}
+      aria-live="polite"
+      data-tour="scan-status"
+    >
       <span aria-hidden="true">{dot}</span>
       <span className="font-medium">{label}</span>
       {state === "offline" && pendingCount > 0 && (
