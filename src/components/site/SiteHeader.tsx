@@ -21,6 +21,20 @@ import { useState } from "react";
  * ลิงก์ "รายละเอียดงาน" กับ "ลงทะเบียน" ผูกกับงานใดงานหนึ่ง จึงต้องสร้างตอนใช้งาน
  * ไม่ใช่เขียนตายตัวไว้ที่นี่ ระบบรองรับหลายงานพร้อมกัน
  */
+/**
+ * แปลงที่อยู่ของลิงก์เป็นชื่อป้ายสำหรับคำแนะนำการใช้งาน
+ *
+ * ใช้ชื่อที่สื่อความหมาย ไม่ใช่ลำดับที่ ๑ ๒ ๓ เพราะเมนูบางอันโผล่เฉพาะตอนมีงานเปิดรับ
+ * ถ้าอิงลำดับ พอเมนูหายไปหนึ่งอันคำแนะนำจะชี้ผิดทั้งแถวโดยไม่มีใครรู้
+ */
+function tourKey(href: string): string {
+  if (href === "/") return "home";
+  if (href === "/privacy") return "privacy";
+  if (href === "/terms") return "terms";
+  if (href.endsWith("/register")) return "event-register";
+  return "event-detail";
+}
+
 function buildLinks(eventSlug?: string | null) {
   return [
     { href: "/", label: "งานทั้งหมด" },
@@ -93,6 +107,7 @@ export function SiteHeader({
               <Link
                 key={link.href}
                 href={link.href}
+                data-tour={`nav-${tourKey(link.href)}`}
                 aria-current={isActive(link.href) ? "page" : undefined}
                 className={`px-3 py-2 rounded-[var(--radius-pill)] text-sm transition-colors ${
                   isActive(link.href)

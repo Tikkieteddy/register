@@ -52,6 +52,7 @@ export function AdminShell({
         </div>
         <button
           type="button"
+          data-tour="cms-mobile-menu"
           onClick={() => setMenuOpen((open) => !open)}
           aria-expanded={menuOpen}
           className="min-h-11 px-3 rounded-[var(--radius-control)] border border-line text-sm text-ink-2"
@@ -67,7 +68,7 @@ export function AdminShell({
         }`}
       >
         <div className="px-4 py-4 border-b border-line hidden lg:flex lg:flex-col lg:gap-3">
-          <div>
+          <div data-tour="cms-current-event">
             <p className="text-xs text-muted">หลังบ้านผู้ดูแล</p>
             <p className="font-semibold text-ink leading-snug">{eventName}</p>
           </div>
@@ -108,7 +109,7 @@ export function AdminShell({
           <TourLauncher steps={CMS_TOUR} storageKey="tour.cms.v1" className="self-start" />
         </div>
 
-        <div className="p-3 border-t border-line">
+        <div className="p-3 border-t border-line" data-tour="cms-account">
           <p className="text-xs text-muted">เข้าสู่ระบบเป็น</p>
           <p className="text-sm text-ink font-medium truncate">{userName}</p>
           <form action={logoutAction} className="mt-2">
