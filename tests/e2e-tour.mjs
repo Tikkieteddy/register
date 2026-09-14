@@ -51,8 +51,13 @@ try {
   check("เข้าครั้งแรกคำแนะนำขึ้นเอง", await dialog.count() > 0);
   check("ขึ้นข้อทักทายเป็นข้อแรก",
     (await p.getByRole("heading", { name: /ยินดีต้อนรับ/ }).count()) > 0);
-  check("บอกว่าอยู่ข้อที่เท่าไรจากทั้งหมด",
-    (await p.getByText("1/4").count()) > 0);
+  /**
+   * จำนวนข้อไม่ตายตัว — ขึ้นกับว่าเมนูไหนมองเห็นได้จริงบนจอขนาดนั้น
+   * เช่นปุ่มเปิดเมนูจะโผล่เฉพาะบนจอเล็ก ส่วนเมนูเต็มแถวโผล่เฉพาะจอใหญ่
+   * เทสต์จึงตรวจว่า "มีตัวนับและเลขหน้าสมเหตุสมผล" ไม่ใช่ตรึงตัวเลขไว้
+   */
+  const counter = await p.locator('[role="dialog"] .tabular-nums').innerText();
+  check(`บอกว่าอยู่ข้อที่เท่าไรจากทั้งหมด (${counter})`, /^1\/[0-9]+$/.test(counter.trim()));
 
   // เดินไปข้อ 2 แล้วดูว่าไฮไลต์ปุ่มจริง
   await p.getByRole("button", { name: "ถัดไป" }).click();
@@ -64,7 +69,10 @@ try {
 
   await p.getByRole("button", { name: "ย้อนกลับ" }).click();
   await p.waitForTimeout(600);
-  check("กดย้อนกลับได้", (await p.getByText("1/4").count()) > 0);
+  /* กลับมาข้อแรกต้องได้ตัวนับเดิมเป๊ะ — เทียบกับค่าที่อ่านไว้ตอนต้น ไม่ตรึงเลขไว้ในเทสต์ */
+  const backCounter = await p.locator('[role="dialog"] .tabular-nums').innerText();
+  check("กดย้อนกลับได้", backCounter.trim() === counter.trim(),
+    `คาดว่า ${counter.trim()} แต่ได้ ${backCounter.trim()}`);
 
   // ข้ามแล้วต้องไม่ขึ้นอีก
   await p.getByRole("button", { name: "ข้ามคำแนะนำ" }).click();
@@ -96,22 +104,39 @@ try {
    * คำแนะนำต้องข้ามข้อนั้นไปเอง ไม่ใช่พูดถึงปุ่มที่ผู้ใช้มองไม่เห็น
    */
   const hasSwitcher = (await p.locator('[data-tour="cms-event-switcher"]').count()) > 0;
-  const expected = hasSwitcher ? "1/6" : "1/5";
-  check(`นับข้อถูกตามปุ่มที่มีจริง (${expected})`,
-    (await p.getByText(expected).count()) > 0,
+  const cmsCounter = await p.locator('[role="dialog"] .tabular-nums').innerText();
+  check(`นับข้อได้ถูกต้อง (${cmsCounter.trim()})`, /^1\/1[0-9]$/.test(cmsCounter.trim()),
     hasSwitcher ? "มีตัวสลับงาน" : "มีงานเดียว จึงไม่มีตัวสลับงาน");
 
-  await p.getByRole("button", { name: "ถัดไป" }).click();
-  await p.waitForTimeout(900);
-  const secondTitle = hasSwitcher ? "ดูแลงานไหนอยู่" : "รายชื่อผู้ลงทะเบียน";
-  check(`ข้อ 2 ชี้ไปที่ "${secondTitle}"`,
-    (await p.getByRole("heading", { name: secondTitle }).count()) > 0);
+  /**
+   * เดินดูทุกข้อจนจบ แล้วเก็บหัวข้อไว้ตรวจว่าครอบคลุมเมนูครบ
+   * เพราะโจทย์คือ "แนะนำทุกเมนู" ไม่ใช่แค่แนะนำบางอัน
+   */
+  const titles = [];
+  for (let i = 0; i < 25; i++) {
+    titles.push(await p.locator('[role="dialog"] h2').innerText());
+    const next = p.getByRole("button", { name: "ถัดไป" });
+    if ((await next.count()) === 0) break;
+    await next.click();
+    await p.waitForTimeout(350);
+  }
+  const joined = titles.join(" | ");
+
+  for (const menu of [
+    "Dashboard",
+    "ผู้ลงทะเบียน",
+    "จัดการอีเมล",
+    "ลิงก์ติดตามผล",
+    "ภาพและสื่อ",
+    "ตั้งค่างาน",
+    "จัดการงาน",
+    "บันทึกการใช้งาน",
+  ]) {
+    check(`แนะนำเมนู "${menu}"`, joined.includes(menu));
+  }
+  check("แนะนำส่วนบัญชีผู้ใช้ด้วย", joined.includes("บัญชีของคุณ"));
   check("ไม่พูดถึงตัวสลับงานตอนที่ไม่มีให้เห็น",
-    hasSwitcher || (await p.getByRole("heading", { name: "ดูแลงานไหนอยู่" }).count()) === 0);
-  check("เมนูรายชื่อผู้ลงทะเบียนมีอยู่จริง",
-    (await p.locator('[data-tour="cms-nav-registrations"]').count()) > 0);
-  check("เมนูตั้งค่างานมีอยู่จริง",
-    (await p.locator('[data-tour="cms-nav-settings"]').count()) > 0);
+    hasSwitcher || !joined.includes("สลับไปดูแลงานอื่น"));
   await ctx.close();
 
   /* ---------- ③ หน้าสแกน ---------- */

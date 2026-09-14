@@ -27,6 +27,23 @@ type Rect = { top: number; left: number; width: number; height: number };
 /** ระยะเผื่อรอบปุ่มที่ไฮไลต์ ให้เห็นขอบชัดโดยไม่ชิดเกินไป */
 const PAD = 8;
 
+/**
+ * ปุ่มนี้ "มองเห็นได้จริง" บนหน้าจอตอนนี้หรือไม่
+ *
+ * ⚠️ ห้ามเช็คแค่ว่ามีอยู่ใน DOM หรือไม่ — เคยพลาดมาแล้ว
+ *
+ *    ปุ่มหลายตัวถูกซ่อนตามขนาดจอ เช่นปุ่มเปิดเมนูที่โผล่เฉพาะบนมือถือ
+ *    ถ้าเช็คแค่ querySelector จะเจอ element นั้นอยู่ดีทั้งที่คนมองไม่เห็น
+ *    คำแนะนำก็จะไปชี้ที่ว่างเปล่า แล้วดูเหมือนระบบพัง
+ *
+ *    วัดจากขนาดจริงที่เบราว์เซอร์คำนวณให้ ซึ่งเป็น 0 เมื่อถูกซ่อนด้วย display:none
+ */
+function isVisible(el: Element | null): el is Element {
+  if (!el) return false;
+  const rect = el.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0;
+}
+
 export function Tour({
   steps,
   storageKey,
@@ -90,7 +107,7 @@ export function Tour({
   const visibleSteps = steps.filter((s) => {
     if (!s.target) return true;
     if (typeof document === "undefined") return true;
-    return document.querySelector(s.target) !== null;
+    return isVisible(document.querySelector(s.target));
   });
 
   const activeSteps = visibleSteps.length > 0 ? visibleSteps : steps;
@@ -109,8 +126,8 @@ export function Tour({
         return;
       }
       const el = document.querySelector(step.target);
-      if (!el) {
-        // หาไม่เจอ — แสดงเป็นกล่องกลางจอแทน ไม่ปล่อยให้ค้าง
+      if (!isVisible(el)) {
+        // หาไม่เจอหรือถูกซ่อนอยู่ — แสดงเป็นกล่องกลางจอแทน ไม่ปล่อยให้ค้าง
         setRect(null);
         return;
       }
@@ -160,15 +177,23 @@ export function Tour({
       aria-label="คำแนะนำการใช้งาน"
       className="fixed inset-0 z-[100]"
     >
-      {/* ฉากมืดคลุมทั้งจอ — เจาะช่องให้เห็นปุ่มที่กำลังแนะนำ */}
-      <div className="absolute inset-0 bg-[rgba(28,23,20,0.6)]" onClick={finish} aria-hidden="true" />
+      {/*
+        ฉากคลุมทั้งจอ — เทาเข้มโปร่งแสงพร้อมเบลอฉากหลังเล็กน้อย
+        ใช้เทากลางแทนดำสนิท เพื่อให้เนื้อหาข้างหลังยังพอเห็นเป็นบริบทได้
+        คนจะได้รู้ว่าตัวเองอยู่หน้าไหน ไม่ใช่เหมือนโดนบังจนมืดทั้งจอ
+      */}
+      <div
+        className="absolute inset-0 bg-[rgba(46,41,38,0.55)] backdrop-blur-[2px]"
+        onClick={finish}
+        aria-hidden="true"
+      />
 
       {rect && (
         <div
           aria-hidden="true"
           className="absolute rounded-[var(--radius-control)] pointer-events-none
-            ring-4 ring-[color:var(--color-primary)]
-            shadow-[0_0_0_9999px_rgba(28,23,20,0.6)]"
+            ring-2 ring-white/70 ring-offset-2 ring-offset-transparent
+            shadow-[0_0_0_9999px_rgba(46,41,38,0.55),0_0_24px_6px_rgba(255,255,255,0.25)]"
           style={{
             top: rect.top - PAD,
             left: rect.left - PAD,
@@ -182,24 +207,27 @@ export function Tour({
         ref={boxRef}
         tabIndex={-1}
         className="absolute left-1/2 -translate-x-1/2 w-[min(28rem,calc(100vw-2rem))]
-          bg-surface rounded-[var(--radius-card)] border border-line shadow-xl p-5
-          flex flex-col gap-3 outline-none"
+          rounded-[var(--radius-card)] p-5 flex flex-col gap-3 outline-none
+          bg-[rgba(32,28,26,0.82)] backdrop-blur-xl
+          border border-white/15
+          shadow-[0_16px_48px_-12px_rgba(0,0,0,0.6)]
+          text-white"
         style={placeBox(rect)}
       >
         <div className="flex items-start justify-between gap-3">
-          <h2 className="text-base font-semibold text-ink">{step.title}</h2>
-          <span className="text-xs text-muted shrink-0 tabular-nums mt-0.5">
+          <h2 className="text-base font-semibold text-white">{step.title}</h2>
+          <span className="text-xs text-white/60 shrink-0 tabular-nums mt-0.5">
             {index + 1}/{activeSteps.length}
           </span>
         </div>
 
-        <p className="text-sm text-ink-2 leading-relaxed">{step.body}</p>
+        <p className="text-sm text-white/85 leading-relaxed">{step.body}</p>
 
         <div className="flex items-center justify-between gap-3 pt-1">
           <button
             type="button"
             onClick={finish}
-            className="text-sm text-muted hover:text-ink-2 underline min-h-11 px-1"
+            className="text-sm text-white/55 hover:text-white/85 underline min-h-11 px-1"
           >
             ข้ามคำแนะนำ
           </button>
@@ -209,8 +237,8 @@ export function Tour({
               <button
                 type="button"
                 onClick={() => setIndex((i) => i - 1)}
-                className="min-h-11 px-4 rounded-[var(--radius-pill)] border border-line
-                  text-sm text-ink-2 hover:bg-surface-2"
+                className="min-h-11 px-4 rounded-[var(--radius-pill)] border border-white/25
+                  text-sm text-white/85 hover:bg-white/10 transition-colors"
               >
                 ย้อนกลับ
               </button>
@@ -218,8 +246,8 @@ export function Tour({
             <button
               type="button"
               onClick={() => (isLast ? finish() : setIndex((i) => i + 1))}
-              className="min-h-11 px-5 rounded-[var(--radius-pill)] bg-primary text-primary-contrast
-                text-sm font-semibold hover:bg-primary-dark"
+              className="min-h-11 px-5 rounded-[var(--radius-pill)] bg-white text-[#201c1a]
+                text-sm font-semibold hover:bg-white/90 transition-colors"
             >
               {isLast ? "เริ่มใช้งาน" : "ถัดไป"}
             </button>
