@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SiteCredit } from "@/components/site/SiteCredit";
 import { currentYear } from "@/lib/datetime";
 
 /**
@@ -51,6 +52,12 @@ export function SiteFooter({
             สมัครสมาชิก
           </Link>
         </nav>
+      </div>
+
+      <div className="border-t border-line">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-4">
+          <SiteCredit />
+        </div>
       </div>
     </footer>
   );

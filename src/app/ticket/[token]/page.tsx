@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SiteCredit } from "@/components/site/SiteCredit";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ResendEmailButton, TicketActions } from "@/components/ticket/TicketActions";
@@ -123,6 +124,7 @@ export default async function TicketPage({ params, searchParams }: Props) {
           <span className="text-ink-2">{site}/ticket/{ticket.qrToken}</span>
         </p>
       </main>
+      <SiteCredit className="pb-6 px-4" />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SiteCredit } from "@/components/site/SiteCredit";
 import { notFound, redirect } from "next/navigation";
 import { trackFormViewAction } from "@/app/actions/registration";
 import { SiteHeader } from "@/components/site/SiteHeader";
@@ -103,6 +104,7 @@ export default async function RegisterPage({ params, searchParams }: Props) {
           utm={{ source: utm_source, medium: utm_medium, campaign: utm_campaign }}
         />
       </main>
+      <SiteCredit className="pb-6 px-4" />
     </div>
   );
 }

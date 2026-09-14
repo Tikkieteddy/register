@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LoginForm } from "@/components/staff/LoginForm";
+import { SiteCredit } from "@/components/site/SiteCredit";
 import { Card, CardBody } from "@/components/ui/Card";
 import { canScan, getSession, isAdmin, type SessionUser } from "@/lib/auth/session";
 
@@ -151,9 +152,12 @@ function ChooseAreaView({ user, denied }: { user: SessionUser; denied: boolean }
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-dvh flex items-center justify-center p-4 bg-bg">
-      <div className="w-full max-w-sm flex flex-col gap-6">{children}</div>
-    </main>
+    <div className="min-h-dvh flex flex-col bg-bg">
+      <main className="flex-1 flex items-center justify-center p-4">
+        <div className="w-full max-w-sm flex flex-col gap-6">{children}</div>
+      </main>
+      <SiteCredit className="pb-6 px-4" />
+    </div>
   );
 }
 

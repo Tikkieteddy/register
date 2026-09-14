@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { SiteCredit } from "@/components/site/SiteCredit";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { logoutAction } from "@/app/actions/auth";
@@ -111,7 +112,10 @@ export function AdminShell({
         </div>
       </aside>
 
-      <main className="flex-1 min-w-0 px-4 sm:px-6 py-5">{children}</main>
+      <div className="flex-1 min-w-0 flex flex-col">
+        <main className="flex-1 px-4 sm:px-6 py-5">{children}</main>
+        <SiteCredit className="border-t border-line py-4 px-4" />
+      </div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SiteCredit } from "@/components/site/SiteCredit";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ShareButtons } from "@/components/landing/ShareButtons";
@@ -269,6 +270,11 @@ export default async function EventLandingPage({ params, searchParams }: Props) 
           <div className="flex gap-5">
             <Link href="/privacy" className="hover:text-primary-dark">{dict.landing.privacyPolicy}</Link>
             <Link href="/terms" className="hover:text-primary-dark">{dict.landing.terms}</Link>
+          </div>
+        </div>
+        <div className="border-t border-line">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-4">
+            <SiteCredit />
           </div>
         </div>
       </footer>
