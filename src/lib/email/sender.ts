@@ -16,7 +16,22 @@ export type EmailMessage = {
   subject: string;
   html: string;
   text: string;
-  attachments?: { filename: string; content: Buffer; contentType: string }[];
+  attachments?: EmailAttachment[];
+};
+
+export type EmailAttachment = {
+  filename: string;
+  content: Buffer;
+  contentType: string;
+  /**
+   * รหัสอ้างอิงสำหรับฝังรูปในเนื้ออีเมล — ตั้งค่าแล้วจะอ้างถึงได้ด้วย src="cid:<ค่าที่ตั้ง>"
+   *
+   * ⚠️ ห้ามกลับไปฝังรูปเป็น data URI เด็ดขาด — เคยพลาดมาแล้ว
+   *    Gmail กับ Outlook บล็อก <img src="data:image/..."> ทิ้งเสมอ
+   *    ผู้ลงทะเบียนจะเห็นเป็นกรอบว่างแทน QR ทั้งที่อีเมลส่งถึงแล้ว
+   *    และเทสต์ในเครื่องจับไม่ได้ เพราะตอนนั้นใช้ตัวสำรองที่ไม่ได้ส่งออกจริง
+   */
+  contentId?: string;
 };
 
 export type SendResult =
@@ -50,6 +65,8 @@ class ResendAdapter implements EmailAdapter {
         attachments: message.attachments?.map((a) => ({
           filename: a.filename,
           content: a.content,
+          contentType: a.contentType,
+          ...(a.contentId ? { contentId: a.contentId } : {}),
         })),
       });
       if (error) return { ok: false, error: error.message };

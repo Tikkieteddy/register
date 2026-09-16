@@ -1,6 +1,6 @@
 import { buildIcs, googleCalendarUrl, type CalendarEvent } from "@/lib/calendar";
 import { clientEnv } from "@/lib/env";
-import { qrDataUrl, qrPngBuffer } from "@/lib/qr";
+import { qrPngBuffer } from "@/lib/qr";
 import { getTicketByRegistrationId, ticketTimeRange, type TicketView } from "@/lib/ticket";
 import { sendWithRetry } from "./sender";
 import { confirmationHtml, confirmationSubject, confirmationText } from "./templates";
@@ -37,10 +37,13 @@ export async function sendConfirmationEmail(
   if (!ticket) return null;
 
   const site = clientEnv.NEXT_PUBLIC_SITE_URL;
-  const [qrDataUri, qrPng] = await Promise.all([
-    qrDataUrl(ticket.qrToken, 400),
-    qrPngBuffer(ticket.qrToken, 512),
-  ]);
+  const qrPng = await qrPngBuffer(ticket.qrToken, 512);
+
+  /**
+   * รหัสอ้างอิงรูป QR ในอีเมล — ต้องไม่ซ้ำกันระหว่างอีเมลแต่ละฉบับ
+   * จึงผูกกับรหัสลงทะเบียนซึ่งไม่ซ้ำกันอยู่แล้ว
+   */
+  const qrContentId = `qr-${ticket.registrationCode}`;
 
   const data = {
     firstName: ticket.firstName,
@@ -63,10 +66,13 @@ export async function sendConfirmationEmail(
     organizerPhone: ticket.event.organizerPhone,
     organizerEmail: ticket.event.organizerEmail,
     /**
-     * ฝัง QR เป็น data URI ในอีเมล และแนบไฟล์ PNG ไปด้วย
-     * เผื่อโปรแกรมอีเมลบล็อกการโหลดรูป ตามข้อกำหนด A2
+     * อ้างถึงไฟล์ QR ที่แนบไปในอีเมลฉบับเดียวกัน ไม่ใช่ data URI
+     *
+     * ไฟล์เดียวทำสองหน้าที่ — แสดงในเนื้ออีเมล และให้ดาวน์โหลดเก็บไว้ได้
+     * ถ้าโปรแกรมอีเมลไม่ยอมแสดงรูป ยังมีรหัสบัตรเป็นตัวอักษรและลิงก์บัตรออนไลน์
+     * ให้ใช้แทนได้ ตามข้อกำหนด A2
      */
-    qrImageUrl: qrDataUri,
+    qrImageUrl: `cid:${qrContentId}`,
     ticketUrl: `${site}/ticket/${ticket.qrToken}`,
     calendarUrl: googleCalendarUrl(calendarEventFromTicket(ticket)),
     cancelUrl: `${site}/ticket/${ticket.qrToken}/cancel`,
@@ -82,7 +88,12 @@ export async function sendConfirmationEmail(
       html: confirmationHtml(data),
       text: confirmationText(data),
       attachments: [
-        { filename: `qr-${ticket.registrationCode}.png`, content: qrPng, contentType: "image/png" },
+        {
+          filename: `qr-${ticket.registrationCode}.png`,
+          content: qrPng,
+          contentType: "image/png",
+          contentId: qrContentId,
+        },
         {
           filename: `${ticket.registrationCode}.ics`,
           content: Buffer.from(icsFromTicket(ticket), "utf-8"),

@@ -10,6 +10,7 @@
 set -u
 BASE="${BASE_URL:-http://localhost:3100}"
 TESTS=(
+  email-template
   e2e-register-flow e2e-full-flow e2e-staff-flow e2e-offline-sync
   e2e-admin-flow e2e-admin-media e2e-multi-event e2e-member-signup e2e-tour e2e-audit-fixes e2e-security
 )
@@ -34,7 +35,13 @@ node -e '
 printf '\n🧪 ชุดทดสอบทั้งหมด (%s)\n\n' "$BASE"
 for t in "${TESTS[@]}"; do
   printf '%-22s ' "$t"
-  if BASE_URL="$BASE" node "tests/$t.mjs" "$tmp/$t.png" > "$tmp/$t.log" 2>&1; then
+  # เทสต์ที่เขียนเป็น TypeScript ต้องรันผ่าน tsx ส่วน .mjs รันด้วย node ตรง ๆ ได้
+  if [ -f "tests/$t.ts" ]; then
+    runner=(npx tsx "tests/$t.ts")
+  else
+    runner=(node "tests/$t.mjs" "$tmp/$t.png")
+  fi
+  if BASE_URL="$BASE" "${runner[@]}" > "$tmp/$t.log" 2>&1; then
     if grep -q "ข้ามเทสต์นี้" "$tmp/$t.log"; then
       skipped=$((skipped + 1))
       echo "⏭️  ข้าม — $(grep -A1 'ข้ามเทสต์นี้' "$tmp/$t.log" | tail -1 | sed 's/^ *//')"
