@@ -51,27 +51,3 @@ export function EventSwitcher({
     </label>
   );
 }
-
-/** ปุ่มสลับงานในหน้ารายการงาน — ทำงานเหมือนกัน แต่เลือกทีละงานจากรายการ */
-export function SwitchEventButton({ slug }: { slug: string }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-
-  return (
-    <button
-      type="button"
-      disabled={pending}
-      onClick={() =>
-        startTransition(async () => {
-          await selectEventAction(slug);
-          router.refresh();
-        })
-      }
-      className="inline-flex items-center min-h-11 px-4 rounded-[var(--radius-pill)]
-        border border-primary text-primary-dark hover:bg-primary-light transition-colors
-        text-sm disabled:opacity-60"
-    >
-      {pending ? "กำลังสลับ…" : "สลับมางานนี้"}
-    </button>
-  );
-}

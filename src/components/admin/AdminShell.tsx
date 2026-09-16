@@ -16,14 +16,18 @@ import type { AdminEventOption } from "@/lib/admin/current-event";
  * บนมือถือแถบข้างยุบเป็นปุ่มเปิด-ปิด เพราะผู้จัดงานมักเปิดดูยอดลงทะเบียน
  * จากมือถือระหว่างเดินทาง ถ้าปล่อยเมนูกางไว้จะกินพื้นที่จนอ่านตัวเลขไม่สะดวก
  */
+/**
+ * "งานทั้งหมด" อยู่บนสุดและแยกเส้นออกจากเมนูอื่น เพราะเป็นคนละระดับกัน —
+ * เป็นทางกลับไปเลือกงาน ส่วนที่เหลือคือเมนูภายในงานที่เลือกอยู่
+ */
 const NAV = [
-  { href: "/admin-cms", label: "Dashboard", icon: "▦" },
+  { href: "/admin-cms", label: "งานทั้งหมด", icon: "◈" },
+  { href: "/admin-cms/dashboard", label: "Dashboard", icon: "▦" },
   { href: "/admin-cms/registrations", label: "ผู้ลงทะเบียน", icon: "☰" },
   { href: "/admin-cms/emails", label: "จัดการอีเมล", icon: "✉" },
   { href: "/admin-cms/links", label: "ลิงก์ติดตามผล", icon: "⇗" },
   { href: "/admin-cms/media", label: "ภาพและสื่อ", icon: "▣" },
   { href: "/admin-cms/settings", label: "ตั้งค่างาน", icon: "⚙" },
-  { href: "/admin-cms/events", label: "จัดการงาน", icon: "◈" },
   { href: "/admin-cms/audit", label: "บันทึกการใช้งาน", icon: "⏱" },
 ] as const;
 
