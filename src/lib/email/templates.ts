@@ -34,7 +34,13 @@ export type ConfirmationEmailData = {
   organizerName: string;
   organizerPhone: string | null;
   organizerEmail: string | null;
-  /** URL ของภาพ QR — ฝังในอีเมลและแนบเป็นไฟล์ด้วย */
+  /**
+   * ที่อยู่ของภาพ QR ในอีเมล — ต้องเป็นรูปแบบ `cid:<รหัสไฟล์แนบ>` เท่านั้น
+   *
+   * ⚠️ ห้ามใส่ data URI (`data:image/png;base64,...`) เด็ดขาด
+   *    Gmail และ Outlook บล็อกทิ้งเสมอ ผู้ลงทะเบียนจะเห็นกรอบว่างแทน QR
+   *    มีเทสต์ `tests/email-template.mjs` คอยจับไว้แล้ว
+   */
   qrImageUrl: string;
   ticketUrl: string;
   calendarUrl: string;
