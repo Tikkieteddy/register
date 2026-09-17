@@ -33,8 +33,15 @@ export const ticketStatusEnum = pgEnum("ticket_status", ["valid", "used", "void"
 /** วิธีที่เจ้าหน้าที่ใช้เช็คอิน — แยกสถิติได้ว่า QR ใช้งานได้ดีแค่ไหน */
 export const checkInMethodEnum = pgEnum("check_in_method", ["qr", "search", "walkin"]);
 
-/** บทบาทผู้ใช้ระบบ */
-export const userRoleEnum = pgEnum("user_role", ["admin", "staff", "viewer"]);
+/**
+ * ระดับสิทธิ์ของบัญชีเจ้าหน้าที่
+ *
+ *   admin     — ผู้ดูแลระบบ: เข้าได้ทุกส่วน จัดการได้ทุกอย่างรวมถึงบัญชีผู้ใช้
+ *   organizer — ผู้จัดงาน: เข้าได้ทุกส่วนเหมือน admin ยกเว้นเพิ่มหรือแก้บัญชีผู้ใช้
+ *   staff     — เจ้าหน้าที่หน้างาน: เข้าได้เฉพาะระบบสแกนเช็คอิน เข้าหลังบ้านไม่ได้เลย
+ *   viewer    — ค่าเก่าที่ไม่เคยถูกใช้งานจริง ปล่อยไว้เพราะลบค่าออกจาก enum ไม่ได้
+ */
+export const userRoleEnum = pgEnum("user_role", ["admin", "organizer", "staff", "viewer"]);
 
 /** ประเภทความยินยอม (PDPA) */
 export const consentTypeEnum = pgEnum("consent_type", ["pdpa", "photo", "terms", "marketing"]);

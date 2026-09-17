@@ -4,7 +4,12 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { eventSessions, events, users } from "@/db/schema";
-import { getAdminOrNull, NOT_ADMIN_MESSAGE } from "@/lib/admin/guard";
+import {
+  getAdminOrNull,
+  getUserAdminOrNull,
+  NOT_ADMIN_MESSAGE,
+  NOT_USER_ADMIN_MESSAGE,
+} from "@/lib/admin/guard";
 import { hashPassword } from "@/lib/auth/password";
 import { pickFields, recordAudit } from "@/lib/audit";
 
@@ -168,13 +173,19 @@ export async function saveUserAction(input: {
   id?: string;
   email: string;
   fullName: string;
-  role: "admin" | "staff" | "viewer";
+  role: "admin" | "organizer" | "staff" | "viewer";
   canScan: boolean;
   isActive: boolean;
   password?: string;
 }): Promise<SettingsResult> {
-  const admin = await getAdminOrNull();
-  if (!admin) return { ok: false, message: NOT_ADMIN_MESSAGE };
+  /**
+   * ⚠️ ด่านนี้ต้องเข้มกว่าหน้าอื่นในหลังบ้าน — เฉพาะผู้ดูแลระบบเท่านั้น
+   *    ผู้จัดงานเปิดหลังบ้านได้อยู่แล้ว จึงยิง action นี้ตรงได้ถ้ารู้ชื่อ
+   *    ถ้าปล่อยผ่าน เขาจะแก้บัญชีตัวเองเป็นผู้ดูแลระบบได้ทันที
+   *    เท่ากับไม่มีการแบ่งสิทธิ์เลยตั้งแต่แรก
+   */
+  const admin = await getUserAdminOrNull();
+  if (!admin) return { ok: false, message: NOT_USER_ADMIN_MESSAGE };
 
   const email = input.email.trim().toLowerCase();
   const fieldErrors: Record<string, string> = {};

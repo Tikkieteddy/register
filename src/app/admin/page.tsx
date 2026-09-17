@@ -3,7 +3,7 @@ import Link from "next/link";
 import { LoginForm } from "@/components/staff/LoginForm";
 import { SiteCredit } from "@/components/site/SiteCredit";
 import { Card, CardBody } from "@/components/ui/Card";
-import { canScan, getSession, isAdmin, type SessionUser } from "@/lib/auth/session";
+import { canOpenCms, canScan, getSession, type SessionUser } from "@/lib/auth/session";
 
 /**
  * ทางเข้าเดียวของคนทำงานทั้งหมด — ทั้งเจ้าหน้าที่หน้างานและผู้ดูแลระบบ
@@ -75,14 +75,14 @@ function SignInView() {
 function ChooseAreaView({ user, denied }: { user: SessionUser; denied: boolean }) {
   /**
    * สิทธิ์ของสองส่วนแยกกันคนละเรื่อง ต้องตรวจแยกกัน
-   *   · ระบบจัดการงาน — เฉพาะผู้ดูแลระบบ
-   *   · หน้าสแกนเช็คอิน — เจ้าหน้าที่และผู้ดูแลที่เปิดสิทธิ์สแกนไว้
+   *   · ระบบจัดการงาน — ผู้ดูแลระบบและผู้จัดงาน
+   *   · หน้าสแกนเช็คอิน — ทุกสิทธิ์ที่เปิดการสแกนไว้
    *
-   * ผู้ดูแลบางคนอาจถูกปิดสิทธิ์สแกนไว้ และเจ้าหน้าที่ก็เข้าระบบจัดการงานไม่ได้
-   * จึงต้องแสดงเฉพาะปุ่มที่กดได้จริง ไม่ใช่แสดงทั้งสองปุ่มแล้วค่อยเด้งทีหลัง
+   * แสดงทั้งสองปุ่มเสมอ ปุ่มที่ไม่มีสิทธิ์จะเป็นสีเทาและกดไม่ได้ พร้อมบอกเหตุผล
+   * เพื่อให้ทุกคนเห็นภาพรวมเหมือนกันว่าระบบมีกี่ส่วน และรู้ว่าตัวเองอยู่ตรงไหน
    */
-  const canOpenCms = isAdmin(user);
-  const canOpenScan = canScan(user);
+  const cmsAllowed = canOpenCms(user);
+  const scanAllowed = canScan(user);
 
   return (
     <Shell>
@@ -104,7 +104,7 @@ function ChooseAreaView({ user, denied }: { user: SessionUser; denied: boolean }
         </p>
       )}
 
-      {!canOpenCms && !canOpenScan ? (
+      {!cmsAllowed && !scanAllowed ? (
         <Card>
           <CardBody>
             <p className="text-ink-2 text-sm leading-relaxed">
@@ -115,24 +115,28 @@ function ChooseAreaView({ user, denied }: { user: SessionUser; denied: boolean }
         </Card>
       ) : (
         <div className="flex flex-col gap-3">
-          {canOpenScan && (
-            <AreaButton
-              href="/admin-scan"
-              icon="📷"
-              title="สแกนเช็คอินหน้างาน"
-              description="สแกน QR · ค้นหาชื่อ · ลงทะเบียนหน้างาน — ใช้ได้แม้เน็ตหลุด"
-              primary
-            />
-          )}
-          {canOpenCms && (
-            <AreaButton
-              href="/admin-cms"
-              icon="⚙️"
-              title="ระบบจัดการงาน"
-              description="ตั้งค่างาน · รายชื่อผู้ลงทะเบียน · รายงาน · ส่งออกข้อมูล"
-              primary={!canOpenScan}
-            />
-          )}
+          <AreaButton
+            href="/admin-scan"
+            icon="📷"
+            title="สแกนเช็คอินหน้างาน"
+            description="สแกน QR · ค้นหาชื่อ · ลงทะเบียนหน้างาน — ใช้ได้แม้เน็ตหลุด"
+            primary
+            lockedReason={
+              scanAllowed ? undefined : "บัญชีนี้ถูกปิดสิทธิ์สแกน ติดต่อผู้ดูแลระบบเพื่อเปิดให้"
+            }
+          />
+          <AreaButton
+            href="/admin-cms"
+            icon="⚙️"
+            title="ระบบจัดการงาน"
+            description="ตั้งค่างาน · รายชื่อผู้ลงทะเบียน · รายงาน · ส่งออกข้อมูล"
+            primary={!scanAllowed}
+            lockedReason={
+              cmsAllowed
+                ? undefined
+                : "สิทธิ์เจ้าหน้าที่หน้างานใช้ได้เฉพาะระบบสแกน ติดต่อผู้ดูแลระบบหากต้องการสิทธิ์เพิ่ม"
+            }
+          />
         </div>
       )}
 
@@ -191,18 +195,49 @@ function AreaButton({
   title,
   description,
   primary,
+  lockedReason,
 }: {
   href: string;
   icon: string;
   title: string;
   description: string;
   primary?: boolean;
+  /**
+   * เหตุผลที่กดไม่ได้ — ใส่แล้วปุ่มจะเป็นสีเทาและกดไม่ได้ พร้อมแสดงเหตุผล
+   *
+   * ⚠️ แสดงปุ่มที่กดไม่ได้ ดีกว่าซ่อนปุ่มทิ้ง
+   *    ถ้าซ่อน คนที่เคยได้ยินว่า "ระบบมีหลังบ้านด้วย" จะนึกว่าเว็บเสีย
+   *    แล้วโทรถามผู้ดูแล การบอกตรง ๆ ว่าไม่มีสิทธิ์และให้ติดต่อใคร จบเรื่องได้เร็วกว่า
+   */
+  lockedReason?: string;
 }) {
+  const shell = `flex items-start gap-3 rounded-[var(--radius-card)] border p-4 text-start
+    min-h-16`;
+
+  if (lockedReason) {
+    return (
+      <div
+        aria-disabled="true"
+        className={`${shell} border-line bg-surface-2 opacity-70 cursor-not-allowed`}
+      >
+        <span aria-hidden="true" className="text-2xl leading-none mt-0.5 grayscale">
+          {icon}
+        </span>
+        <span className="flex flex-col gap-1">
+          <span className="font-semibold text-ink-2">
+            {title}
+            <span className="ms-2 text-xs font-normal text-muted">🔒 ไม่มีสิทธิ์</span>
+          </span>
+          <span className="text-sm text-muted leading-snug">{lockedReason}</span>
+        </span>
+      </div>
+    );
+  }
+
   return (
     <a
       href={href}
-      className={`flex items-start gap-3 rounded-[var(--radius-card)] border p-4 text-start
-        transition-colors min-h-16
+      className={`${shell} transition-colors
         focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
         focus-visible:outline-[color:var(--color-primary)]
         ${

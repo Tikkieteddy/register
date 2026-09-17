@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { getAdminEvent, listAdminEvents } from "@/lib/admin/current-event";
 import { requireAdmin } from "@/lib/admin/guard";
+import { ROLE_LABEL } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: { default: "หลังบ้านผู้ดูแล", template: "%s · หลังบ้านผู้ดูแล" },
@@ -16,6 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <AdminShell
       userName={user.fullName}
+      roleLabel={ROLE_LABEL[user.role]}
       eventName={event?.nameTh ?? "ยังไม่มีงานในระบบ"}
       events={allEvents}
       currentSlug={event?.slug ?? null}
