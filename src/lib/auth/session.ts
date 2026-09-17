@@ -18,11 +18,14 @@ const COOKIE_NAME = "staff_session";
 const DEFAULT_HOURS = 8;
 const REMEMBERED_HOURS = 24;
 
+/** ค่าสิทธิ์ทั้งหมดที่มีจริงในระบบ — ใช้ตรวจค่าที่อ่านมาจากโทเคน */
+const ROLES = ["admin", "organizer", "staff", "viewer"] as const;
+
 export type SessionUser = {
   id: string;
   email: string;
   fullName: string;
-  role: "admin" | "staff" | "viewer";
+  role: "admin" | "organizer" | "staff" | "viewer";
   canScan: boolean;
 };
 
@@ -103,7 +106,16 @@ export async function getSession(): Promise<SessionUser | null> {
       id: payload.sub,
       email: String(payload.email ?? ""),
       fullName: String(payload.fullName ?? ""),
-      role: payload.role === "admin" ? "admin" : payload.role === "viewer" ? "viewer" : "staff",
+      /**
+       * ⚠️ ต้องอ่านทุกค่าที่มีอยู่จริง ห้ามเขียนแบบไล่เช็คทีละค่าแล้วเหมาที่เหลือเป็น staff
+       *
+       *    โค้ดเดิมเขียนแบบเหมา พอเพิ่มสิทธิ์ organizer เข้ามา ค่าในโทเคนของ
+       *    ผู้จัดงานจึงถูกแปลงเป็น staff เงียบ ๆ ผลคือตอนฐานข้อมูลสะดุด
+       *    (ทางสำรองท้ายฟังก์ชันนี้) ผู้จัดงานจะถูกเด้งออกจากหลังบ้านทั้งที่ยังมีสิทธิ์
+       */
+      role: ROLES.includes(payload.role as SessionUser["role"])
+        ? (payload.role as SessionUser["role"])
+        : "staff",
       canScan: payload.canScan === true,
     };
   } catch {
@@ -161,9 +173,45 @@ export async function getSession(): Promise<SessionUser | null> {
  */
 export function canScan(user: SessionUser | null): boolean {
   if (!user) return false;
-  return user.canScan && (user.role === "admin" || user.role === "staff");
+  return user.canScan && (user.role === "admin" || user.role === "organizer" || user.role === "staff");
 }
 
+/**
+ * สิทธิ์เข้าหลังบ้าน (CMS)
+ *
+ * ผู้ดูแลระบบและผู้จัดงานเข้าได้ ส่วนเจ้าหน้าที่หน้างานเข้าไม่ได้เลย
+ * เพราะหลังบ้านมีรายชื่อผู้ลงทะเบียนพร้อมข้อมูลส่วนบุคคลครบทุกคน
+ * ซึ่งเกินความจำเป็นของงานสแกนเช็คอินหน้างาน (หลักเก็บเท่าที่จำเป็นตาม PDPA)
+ */
+export function canOpenCms(user: SessionUser | null): boolean {
+  return user?.role === "admin" || user?.role === "organizer";
+}
+
+/**
+ * สิทธิ์เพิ่มหรือแก้บัญชีผู้ใช้ — เฉพาะผู้ดูแลระบบเท่านั้น
+ *
+ * ⚠️ นี่คือเส้นแบ่งเดียวระหว่างผู้ดูแลระบบกับผู้จัดงาน
+ *    ถ้าปล่อยให้ผู้จัดงานแก้บัญชีได้ เขาจะเลื่อนสิทธิ์ตัวเองเป็นผู้ดูแลระบบได้ทันที
+ *    ซึ่งเท่ากับไม่มีการแบ่งสิทธิ์เลยตั้งแต่แรก
+ */
+export function canManageUsers(user: SessionUser | null): boolean {
+  return user?.role === "admin";
+}
+
+/**
+ * ยังคงไว้เพื่อความเข้ากันได้กับโค้ดเดิม — มีความหมายเดียวกับ canManageUsers
+ *
+ * ⚠️ ห้ามใช้ชื่อนี้ตัดสินว่า "เข้าหลังบ้านได้ไหม" อีกต่อไป
+ *    ใช้ canOpenCms() แทน ไม่งั้นผู้จัดงานจะถูกกันออกจากหลังบ้านทั้งหมด
+ */
 export function isAdmin(user: SessionUser | null): boolean {
   return user?.role === "admin";
 }
+
+/** ชื่อสิทธิ์ที่แสดงให้คนอ่าน — คุมไว้ที่เดียวเพื่อให้ทุกหน้าเรียกเหมือนกัน */
+export const ROLE_LABEL: Record<SessionUser["role"], string> = {
+  admin: "ผู้ดูแลระบบ",
+  organizer: "ผู้จัดงาน",
+  staff: "เจ้าหน้าที่หน้างาน",
+  viewer: "ดูอย่างเดียว (ไม่ได้ใช้งานแล้ว)",
+};

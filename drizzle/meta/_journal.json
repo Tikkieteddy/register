@@ -43,6 +43,13 @@
       "when": 1789115070452,
       "tag": "0005_enable_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789115071452,
+      "tag": "0006_add_organizer_role",
+      "breakpoints": true
     }
   ]
 }

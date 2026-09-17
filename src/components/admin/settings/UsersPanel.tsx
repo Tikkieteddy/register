@@ -9,7 +9,7 @@ export type UserRow = {
   id: string;
   email: string;
   fullName: string;
-  role: "admin" | "staff" | "viewer";
+  role: "admin" | "organizer" | "staff" | "viewer";
   canScan: boolean;
   isActive: boolean;
   lastLoginLabel: string;
@@ -20,7 +20,7 @@ type Draft = {
   id?: string;
   email: string;
   fullName: string;
-  role: "admin" | "staff" | "viewer";
+  role: "admin" | "organizer" | "staff" | "viewer";
   canScan: boolean;
   isActive: boolean;
   password: string;
@@ -37,11 +37,26 @@ const EMPTY: Draft = {
 
 const ROLE_LABEL: Record<string, string> = {
   admin: "ผู้ดูแลระบบ",
+  organizer: "ผู้จัดงาน",
   staff: "เจ้าหน้าที่หน้างาน",
-  viewer: "ดูอย่างเดียว",
+  viewer: "ดูอย่างเดียว (ไม่ได้ใช้งานแล้ว)",
 };
 
-export function UsersPanel({ users, currentUserId }: { users: UserRow[]; currentUserId: string }) {
+export function UsersPanel({
+  users,
+  currentUserId,
+  readOnly = false,
+}: {
+  users: UserRow[];
+  currentUserId: string;
+  /**
+   * ผู้จัดงานเปิดหน้านี้ได้เพื่อดูว่าใครดูแลงานอยู่บ้าง แต่แก้ไม่ได้
+   *
+   * ⚠️ การซ่อนปุ่มตรงนี้เป็นแค่เรื่องหน้าตา ไม่ใช่การกันสิทธิ์จริง
+   *    ตัวกันจริงอยู่ที่ saveUserAction ซึ่งตรวจซ้ำที่ฝั่งเซิร์ฟเวอร์เสมอ
+   */
+  readOnly?: boolean;
+}) {
   const router = useRouter();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -52,18 +67,25 @@ export function UsersPanel({ users, currentUserId }: { users: UserRow[]; current
     <div className="flex flex-col gap-4 max-w-4xl">
       <Notice notice={notice} />
 
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={() => {
-            setDraft({ ...EMPTY });
-            setErrors({});
-          }}
-          className="min-h-11 px-4 rounded-[var(--radius-pill)] bg-primary text-primary-contrast text-sm font-semibold hover:bg-primary-dark"
-        >
-          เพิ่มบัญชีผู้ใช้
-        </button>
-      </div>
+      {readOnly ? (
+        <p className="rounded-[var(--radius-control)] border border-line bg-surface-2 px-4 py-3 text-sm text-ink-2">
+          สิทธิ์ผู้จัดงานดูรายชื่อได้อย่างเดียว —
+          หากต้องการเพิ่มหรือแก้บัญชี กรุณาติดต่อผู้ดูแลระบบ
+        </p>
+      ) : (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              setDraft({ ...EMPTY });
+              setErrors({});
+            }}
+            className="min-h-11 px-4 rounded-[var(--radius-pill)] bg-primary text-primary-contrast text-sm font-semibold hover:bg-primary-dark"
+          >
+            เพิ่มบัญชีผู้ใช้
+          </button>
+        </div>
+      )}
 
       {draft ? (
         <form
@@ -109,9 +131,13 @@ export function UsersPanel({ users, currentUserId }: { users: UserRow[]; current
                 value={draft.role}
                 onChange={(e) => setDraft({ ...draft, role: e.target.value as Draft["role"] })}
               >
-                <option value="staff">เจ้าหน้าที่หน้างาน — สแกนและลงทะเบียนหน้างาน</option>
-                <option value="admin">ผู้ดูแลระบบ — เข้าหลังบ้านได้ทั้งหมด</option>
-                <option value="viewer">ดูอย่างเดียว — ดูรายงานได้ แก้ไขไม่ได้</option>
+                <option value="staff">
+                  เจ้าหน้าที่หน้างาน — สแกนเช็คอินเท่านั้น เข้าหลังบ้านไม่ได้
+                </option>
+                <option value="organizer">
+                  ผู้จัดงาน — เข้าหลังบ้านได้ทั้งหมด ยกเว้นเพิ่มหรือแก้บัญชีผู้ใช้
+                </option>
+                <option value="admin">ผู้ดูแลระบบ — ทำได้ทุกอย่าง รวมถึงจัดการบัญชีผู้ใช้</option>
               </select>
             </Labeled>
             <Labeled
@@ -194,24 +220,28 @@ export function UsersPanel({ users, currentUserId }: { users: UserRow[]; current
                   {user.lastLoginLabel}
                 </td>
                 <td className="p-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDraft({
-                        id: user.id,
-                        email: user.email,
-                        fullName: user.fullName,
-                        role: user.role,
-                        canScan: user.canScan,
-                        isActive: user.isActive,
-                        password: "",
-                      });
-                      setErrors({});
-                    }}
-                    className="min-h-9 px-3 rounded-[var(--radius-control)] border border-line text-xs text-ink-2 hover:bg-surface-2"
-                  >
-                    {user.id === currentUserId ? "แก้ไข (บัญชีของคุณ)" : "แก้ไข / ตั้งรหัสใหม่"}
-                  </button>
+                  {readOnly ? (
+                    <span className="text-xs text-muted">—</span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDraft({
+                          id: user.id,
+                          email: user.email,
+                          fullName: user.fullName,
+                          role: user.role,
+                          canScan: user.canScan,
+                          isActive: user.isActive,
+                          password: "",
+                        });
+                        setErrors({});
+                      }}
+                      className="min-h-9 px-3 rounded-[var(--radius-control)] border border-line text-xs text-ink-2 hover:bg-surface-2"
+                    >
+                      {user.id === currentUserId ? "แก้ไข (บัญชีของคุณ)" : "แก้ไข / ตั้งรหัสใหม่"}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

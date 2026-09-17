@@ -4,12 +4,10 @@ import { EventInfoForm } from "@/components/admin/settings/EventInfoForm";
 import { PrivacyForm } from "@/components/admin/settings/PrivacyForm";
 import { QuestionsPanel, type QuestionRow } from "@/components/admin/settings/QuestionsPanel";
 import { QuotaForm } from "@/components/admin/settings/QuotaForm";
-import { UsersPanel, type UserRow } from "@/components/admin/settings/UsersPanel";
 import { db } from "@/db";
-import { eventSessions, users } from "@/db/schema";
+import { eventSessions } from "@/db/schema";
 import { getAdminEvent } from "@/lib/admin/current-event";
 import { requireAdmin } from "@/lib/admin/guard";
-import { formatThaiDate, formatTime } from "@/lib/datetime";
 
 export const metadata = { title: "ตั้งค่างาน" };
 export const dynamic = "force-dynamic";
@@ -18,7 +16,6 @@ const TABS = [
   { key: "info", label: "ข้อมูลงาน" },
   { key: "quota", label: "ที่นั่งและโควตา" },
   { key: "questions", label: "คำถามในฟอร์ม" },
-  { key: "users", label: "ผู้ใช้งาน" },
   { key: "privacy", label: "ความเป็นส่วนตัว" },
 ] as const;
 
@@ -49,7 +46,8 @@ export default async function SettingsPage({
 }: {
   searchParams: Promise<{ tab?: string }>;
 }) {
-  const admin = await requireAdmin();
+  // ยังต้องเรียกด่านตรวจสิทธิ์แม้ไม่ได้ใช้ค่าที่คืนมา — หน้านี้ห้ามเปิดโดยไม่ล็อกอิน
+  await requireAdmin();
   const params = await searchParams;
   const event = await getAdminEvent();
   if (!event) return <p className="text-sm text-muted">ยังไม่มีงานในระบบ</p>;
@@ -113,7 +111,6 @@ export default async function SettingsPage({
 
       {active === "quota" ? await renderQuota(event) : null}
       {active === "questions" ? await renderQuestions(event.id) : null}
-      {active === "users" ? await renderUsers(admin.id) : null}
       {active === "privacy" ? await renderPrivacy(event.id, event.privacyPolicyVersion, event.dataRetentionDays) : null}
     </div>
   );
@@ -214,25 +211,6 @@ async function renderQuestions(eventId: string) {
   return <QuestionsPanel questions={questions} />;
 }
 
-async function renderUsers(currentUserId: string) {
-  const rows = await db.select().from(users).orderBy(asc(users.email));
-  const now = new Date();
-
-  const list: UserRow[] = rows.map((u) => ({
-    id: u.id,
-    email: u.email,
-    fullName: u.fullName,
-    role: u.role,
-    canScan: u.canScan,
-    isActive: u.isActive,
-    isLocked: Boolean(u.lockedUntil && u.lockedUntil > now),
-    lastLoginLabel: u.lastLoginAt
-      ? `${formatThaiDate(u.lastLoginAt)} ${formatTime(u.lastLoginAt)}`
-      : "ยังไม่เคยเข้าระบบ",
-  }));
-
-  return <UsersPanel users={list} currentUserId={currentUserId} />;
-}
 
 async function renderPrivacy(
   eventId: string,

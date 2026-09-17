@@ -236,6 +236,13 @@ async function seed() {
       canScan: true,
     },
     {
+      email: "organizer@example.com",
+      passwordHash: "",
+      fullName: "ผู้จัดงาน (ตัวอย่าง)",
+      role: "organizer",
+      canScan: true,
+    },
+    {
       email: "staff@example.com",
       passwordHash: "",
       fullName: "เจ้าหน้าที่หน้างาน (ตัวอย่าง)",
@@ -244,7 +251,9 @@ async function seed() {
     },
     ])
     .onConflictDoNothing();
-  console.log("   ✓ สร้างบัญชีตัวอย่าง admin@example.com และ staff@example.com");
+  console.log(
+    "   ✓ สร้างบัญชีตัวอย่าง admin@ / organizer@ / staff@example.com",
+  );
 
   console.log("\n✅ ใส่ข้อมูลตัวอย่างเรียบร้อย");
 }

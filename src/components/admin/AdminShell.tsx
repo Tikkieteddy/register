@@ -28,18 +28,28 @@ const NAV = [
   { href: "/admin-cms/links", label: "ลิงก์ติดตามผล", icon: "⇗" },
   { href: "/admin-cms/media", label: "ภาพและสื่อ", icon: "▣" },
   { href: "/admin-cms/settings", label: "ตั้งค่างาน", icon: "⚙" },
+  /**
+   * "ผู้ใช้งาน" แยกออกมาจากหน้าตั้งค่างานโดยตั้งใจ
+   *
+   * บัญชีผู้ใช้ไม่ได้ผูกกับงานใดงานหนึ่ง — คนคนเดียวกันดูแลได้ทุกงานในระบบ
+   * การซ่อนไว้เป็นแท็บในหน้าตั้งค่าของงาน ทำให้เข้าใจผิดว่าต้องตั้งใหม่ทุกงาน
+   */
+  { href: "/admin-cms/users", label: "ผู้ใช้งาน", icon: "◍" },
   { href: "/admin-cms/audit", label: "บันทึกการใช้งาน", icon: "⏱" },
 ] as const;
 
 export function AdminShell({
   children,
   userName,
+  roleLabel,
   eventName,
   events,
   currentSlug,
 }: {
   children: ReactNode;
   userName: string;
+  /** ชื่อสิทธิ์ที่แสดงใต้ชื่อผู้ใช้ — ให้รู้ทันทีว่ากำลังใช้บัญชีระดับไหนอยู่ */
+  roleLabel: string;
   eventName: string;
   events: AdminEventOption[];
   currentSlug: string | null;
@@ -116,6 +126,7 @@ export function AdminShell({
         <div className="p-3 border-t border-line" data-tour="cms-account">
           <p className="text-xs text-muted">เข้าสู่ระบบเป็น</p>
           <p className="text-sm text-ink font-medium truncate">{userName}</p>
+          <p className="text-xs text-primary-dark font-semibold mt-0.5">{roleLabel}</p>
           <form action={logoutAction} className="mt-2">
             <button type="submit" className="text-xs text-primary-dark hover:underline">
               ออกจากระบบ

@@ -11,7 +11,7 @@ set -u
 BASE="${BASE_URL:-http://localhost:3100}"
 TESTS=(
   email-template
-  e2e-register-flow e2e-full-flow e2e-staff-flow e2e-offline-sync
+  e2e-roles e2e-register-flow e2e-full-flow e2e-staff-flow e2e-offline-sync
   e2e-admin-flow e2e-admin-media e2e-multi-event e2e-member-signup e2e-tour e2e-audit-fixes e2e-security
 )
 tmp="$(mktemp -d)"
