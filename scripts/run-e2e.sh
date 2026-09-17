@@ -10,7 +10,7 @@
 set -u
 BASE="${BASE_URL:-http://localhost:3100}"
 TESTS=(
-  email-template
+  email-template storage-r2
   e2e-roles e2e-register-flow e2e-full-flow e2e-staff-flow e2e-offline-sync
   e2e-admin-flow e2e-admin-media e2e-multi-event e2e-member-signup e2e-tour e2e-audit-fixes e2e-security
 )
@@ -36,7 +36,10 @@ printf '\n🧪 ชุดทดสอบทั้งหมด (%s)\n\n' "$BASE"
 for t in "${TESTS[@]}"; do
   printf '%-22s ' "$t"
   # เทสต์ที่เขียนเป็น TypeScript ต้องรันผ่าน tsx ส่วน .mjs รันด้วย node ตรง ๆ ได้
-  if [ -f "tests/$t.ts" ]; then
+  # (.mts คือ TypeScript ที่ใช้ top-level await ได้ ซึ่ง .ts ธรรมดารันไม่ได้)
+  if [ -f "tests/$t.mts" ]; then
+    runner=(npx tsx "tests/$t.mts")
+  elif [ -f "tests/$t.ts" ]; then
     runner=(npx tsx "tests/$t.ts")
   else
     runner=(node "tests/$t.mjs" "$tmp/$t.png")

@@ -31,6 +31,24 @@ function hmac(key: Buffer | string, data: string): Buffer {
   return createHmac("sha256", key).update(data, "utf8").digest();
 }
 
+/**
+ * สร้างกุญแจสำหรับเซ็นคำขอตามมาตรฐาน AWS Signature V4
+ *
+ * แยกออกมาเป็นฟังก์ชันอิสระเพื่อให้ทดสอบเทียบกับค่าตัวอย่างที่ AWS ประกาศไว้ได้
+ * ถ้าขั้นตอนนี้ผิดแม้แต่นิดเดียว R2 จะตอบกลับ 403 ทุกครั้งโดยไม่บอกว่าผิดตรงไหน
+ */
+export function deriveSigningKey(
+  secretAccessKey: string,
+  dateStamp: string,
+  region: string,
+  service: string,
+): Buffer {
+  const kDate = hmac(`AWS4${secretAccessKey}`, dateStamp);
+  const kRegion = hmac(kDate, region);
+  const kService = hmac(kRegion, service);
+  return hmac(kService, "aws4_request");
+}
+
 export class R2Storage implements StorageAdapter {
   readonly name = "cloudflare-r2";
 
@@ -41,10 +59,7 @@ export class R2Storage implements StorageAdapter {
   }
 
   private signingKey(dateStamp: string): Buffer {
-    const kDate = hmac(`AWS4${this.config.secretAccessKey}`, dateStamp);
-    const kRegion = hmac(kDate, REGION);
-    const kService = hmac(kRegion, SERVICE);
-    return hmac(kService, "aws4_request");
+    return deriveSigningKey(this.config.secretAccessKey, dateStamp, REGION, SERVICE);
   }
 
   async upload(params: {
