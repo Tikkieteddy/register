@@ -78,6 +78,27 @@ const REQUIREMENTS: Requirement[] = [
       return (rows[0]?.n ?? 0) > 0;
     },
   },
+  {
+    migration: "0005_enable_rls",
+    what: "ล็อกช่องทางเรียกข้อมูลของ Supabase ครบทุกตาราง (RLS)",
+    check: async (db) => {
+      /**
+       * นับตารางที่ยังไม่ได้เปิด RLS — ต้องเป็นศูนย์
+       *
+       * ⚠️ ห้ามตรวจแค่ตารางใดตารางหนึ่งแล้วสรุปว่าผ่าน
+       *    ถ้าเหลือตารางเดียวที่ไม่ได้ล็อก ข้อมูลในตารางนั้นก็ยังรั่วได้อยู่ดี
+       */
+      const rows = await db.execute<{ n: number }>(sql`
+        select count(*)::int as n
+        from pg_class c
+        join pg_namespace ns on ns.oid = c.relnamespace
+        where ns.nspname = 'public'
+          and c.relkind = 'r'
+          and c.relrowsecurity = false
+      `);
+      return (rows[0]?.n ?? 0) === 0;
+    },
+  },
 ];
 
 /**

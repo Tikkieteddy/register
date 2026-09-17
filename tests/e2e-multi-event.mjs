@@ -74,12 +74,12 @@ async function main() {
     // ล็อกอินเสร็จจะมาอยู่หน้าเลือกส่วนงาน ต้องกดเข้าระบบจัดการงานอีกทีหนึ่ง
     await page.getByRole("link", { name: /ระบบจัดการงาน/ }).click({ timeout: 20000 });
     await page.waitForURL(/\/admin-cms/, { timeout: 15000 });
-    await page.goto(`${BASE}/admin-cms/events`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${BASE}/admin-cms`, { waitUntil: "domcontentloaded" });
 
-    const eventsHeading = page.getByRole("heading", { name: "จัดการงาน" });
+    const eventsHeading = page.getByRole("heading", { name: "งานทั้งหมด", exact: true });
     // waitForURL คืนค่าทันทีที่ URL เปลี่ยน แต่เนื้อหายังอาจวาดไม่เสร็จ ต้องรอหัวข้อจริงก่อน
     await eventsHeading.waitFor({ state: "visible", timeout: 15000 });
-    check("เข้าหน้าจัดการงานได้", await eventsHeading.isVisible());
+    check("เข้าหน้ารายการงานได้", await eventsHeading.isVisible());
 
     await page.waitForTimeout(1500);
     await page.getByRole("textbox", { name: /ชื่องาน \(ภาษาไทย\)/ }).fill(NEW_NAME);
@@ -100,7 +100,7 @@ async function main() {
 
     /* ---------- ③ สลับงาน ---------- */
     console.log("\n③ สลับงานที่กำลังจัดการ");
-    await page.goto(`${BASE}/admin-cms/events`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${BASE}/admin-cms`, { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1000);
 
     check(
@@ -112,9 +112,11 @@ async function main() {
       (await page.locator("body").innerText()).includes("ฉบับร่าง"),
     );
 
-    // สลับกลับไปงานเดิม
-    await page.getByRole("button", { name: "สลับมางานนี้" }).first().click();
-    await page.waitForTimeout(2500);
+    // สลับกลับไปงานเดิม — ปุ่มนี้สลับงานแล้วพาเข้า Dashboard ของงานนั้นให้เลยในคลิกเดียว
+    // งานที่กำลังจัดการอยู่จะขึ้นปุ่ม "เข้าจัดการต่อ" แทน ตัวแรกที่เจอจึงเป็นงานอื่นเสมอ
+    await page.getByRole("button", { name: "เข้าจัดการงานนี้" }).first().click();
+    await page.waitForURL(/\/admin-cms\/dashboard/, { timeout: 15000 });
+    await page.waitForTimeout(1500);
 
     // ไปหน้าอื่นแล้วต้องยังเป็นงานเดิมที่เลือกไว้ (พิสูจน์ว่าคุกกี้ทำงาน ไม่ใช่แค่หน้าเดียว)
     await page.goto(`${BASE}/admin-cms/registrations`, { waitUntil: "domcontentloaded" });

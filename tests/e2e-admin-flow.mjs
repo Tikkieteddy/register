@@ -63,7 +63,8 @@ log(
 // ---------- ② ผู้ดูแลเข้าได้ และ Dashboard แสดงครบ ----------
 console.log("\n② Dashboard");
 await login("admin@example.com", "admin-dev-1234");
-await p.goto(`${BASE}/admin-cms`, { waitUntil: "domcontentloaded" });
+// Dashboard ย้ายมาอยู่ใต้ /admin-cms/dashboard แล้ว ส่วน /admin-cms เป็นหน้ารายการงาน
+await p.goto(`${BASE}/admin-cms/dashboard`, { waitUntil: "domcontentloaded" });
 await p.getByRole("heading", { name: "Dashboard" }).waitFor({ timeout: 45000 });
 
 const chartCount = await p.locator("h3").filter({ hasText: /.+/ }).count();

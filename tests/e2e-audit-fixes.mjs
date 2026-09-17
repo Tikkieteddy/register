@@ -220,6 +220,7 @@ try {
 
   const ADMIN_PAGES = [
     "/admin-cms",
+    "/admin-cms/dashboard",
     "/admin-cms/registrations",
     "/admin-cms/emails",
     "/admin-cms/links",
