@@ -41,9 +41,18 @@ class NotConfiguredStorage implements StorageAdapter {
   readonly name = "not-configured";
 
   private fail(): never {
+    /**
+     * บอกชื่อตัวแปรที่ขาดไปตรง ๆ ไม่ใช่ลิสต์ทั้ง 5 ตัวให้ไปไล่เดาเอง
+     *
+     * ⚠️ บอกแค่ "ชื่อ" ห้ามบอก "ค่า" เด็ดขาด ข้อความนี้ขึ้นบนหน้าจอผู้ใช้
+     *    และสองในห้าตัวเป็นกุญแจลับที่ใครได้ไปลบไฟล์ทั้งถังได้
+     */
+    const missing = missingStorageKeys();
     throw new Error(
-      "ยังไม่ได้ตั้งค่าที่เก็บไฟล์ — ต้องใส่ R2_ACCOUNT_ID, R2_BUCKET, R2_ACCESS_KEY_ID, " +
-        "R2_SECRET_ACCESS_KEY และ R2_PUBLIC_BASE_URL ก่อนจึงจะอัปโหลดภาพบนเครื่องจริงได้",
+      missing.length > 0
+        ? `ยังไม่ได้ตั้งค่าที่เก็บไฟล์ — ขาดตัวแปร ${missing.join(", ")} ` +
+            "ให้ไปตั้งค่าบน Vercel แล้วสั่ง Redeploy ก่อนจึงจะอัปโหลดภาพได้"
+        : "ตั้งค่าที่เก็บไฟล์ครบแล้วแต่ยังใช้ไม่ได้ — ตรวจว่าค่าถูกต้องและสั่ง Redeploy แล้วหรือยัง",
     );
   }
 
@@ -104,4 +113,29 @@ export function getStorage(): StorageAdapter {
  */
 export function isStorageConfigured(): boolean {
   return getStorage().name !== "not-configured";
+}
+
+/** ชื่อตัวแปรทั้งหมดที่ต้องตั้งให้ครบก่อนอัปโหลดไฟล์บนเครื่องจริงได้ */
+const R2_KEYS = [
+  "R2_ACCOUNT_ID",
+  "R2_BUCKET",
+  "R2_ACCESS_KEY_ID",
+  "R2_SECRET_ACCESS_KEY",
+  "R2_PUBLIC_BASE_URL",
+] as const;
+
+/**
+ * บอกว่ายังขาดตัวแปรตัวไหนบ้าง
+ *
+ * ⚠️ มีไว้เพราะการบอกแค่ "ยังตั้งค่าไม่ครบ" ทำให้คนตั้งค่าต้องไล่เดาเองทั้ง 5 ตัว
+ *    ว่าพิมพ์ชื่อผิดตัวไหน หรือลืมตัวไหน ซึ่งเสียเวลาและหาไม่เจอจริง ๆ
+ *
+ * ⚠️ คืนแค่ "ชื่อ" ของตัวแปรที่ขาด ห้ามคืนค่าข้างในเด็ดขาด
+ *    เพราะสองในห้าตัวเป็นกุญแจลับ ถ้าหลุดออกไปคนอื่นลบไฟล์ทั้งถังได้
+ *
+ * นับค่าที่เป็นช่องว่างล้วนว่า "ขาด" ด้วย เพราะเคยเจอมาแล้วว่าคัดลอกมาแล้ว
+ * ติดช่องว่างหรือบรรทัดใหม่มาด้วยจนใช้งานไม่ได้
+ */
+export function missingStorageKeys(): string[] {
+  return R2_KEYS.filter((key) => !(process.env[key] ?? "").trim());
 }

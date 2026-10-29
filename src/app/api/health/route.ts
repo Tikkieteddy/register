@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { getAdminOrNull } from "@/lib/admin/guard";
 import { isEmailConfigured } from "@/lib/email/sender";
-import { isStorageConfigured } from "@/lib/storage";
+import { isStorageConfigured, missingStorageKeys } from "@/lib/storage";
 
 /**
  * ตรวจสุขภาพระบบ — ใช้เฝ้าระวังตอนงานกำลังดำเนินอยู่
@@ -43,6 +43,7 @@ export async function GET() {
 
   const emailReady = isEmailConfigured();
   const storageReady = isStorageConfigured();
+  const storageMissing = missingStorageKeys();
 
   const status: Status = !dbOk ? "down" : emailReady ? "ok" : "degraded";
   const httpStatus = status === "down" ? 503 : 200;
@@ -69,7 +70,19 @@ export async function GET() {
         : { ok: false, note: "ยังไม่ได้ตั้งค่า — ผู้ลงทะเบียนจะไม่ได้รับ QR ทางอีเมล", fix: "ตั้งค่า RESEND_API_KEY และ EMAIL_FROM" },
       ที่เก็บไฟล์ภาพ: storageReady
         ? { ok: true, note: "ตั้งค่าแล้ว อัปโหลดภาพได้" }
-        : { ok: false, note: "ยังไม่ได้ตั้งค่า — อัปโหลดภาพบนเครื่องจริงไม่ได้", fix: "ตั้งค่า R2_ACCOUNT_ID, R2_BUCKET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_PUBLIC_BASE_URL" },
+        : {
+            ok: false,
+            note: "ยังไม่ได้ตั้งค่า — อัปโหลดภาพบนเครื่องจริงไม่ได้",
+            /**
+             * บอกชื่อตัวแปรที่ขาดไปตรง ๆ ไม่ใช่ลิสต์ทั้ง 5 ตัวให้ไปไล่เดาเอง
+             * (บอกแค่ชื่อ ไม่บอกค่า เพราะสองในห้าตัวเป็นกุญแจลับ)
+             */
+            ขาดตัวแปร: storageMissing,
+            fix:
+              storageMissing.length > 0
+                ? `ตั้งค่าตัวแปรที่ขาดบน Vercel แล้วสั่ง Redeploy: ${storageMissing.join(", ")}`
+                : "ตั้งค่าครบแล้วแต่ยังใช้ไม่ได้ — ตรวจว่าค่าถูกต้องและสั่ง Redeploy แล้วหรือยัง",
+          },
       งานเก็บกวาดรายวัน: process.env.CRON_SECRET
         ? { ok: true, note: "ตั้งค่าแล้ว — คืนที่นั่งค้างและลบข้อมูลหมดอายุอัตโนมัติ" }
         : { ok: false, note: "ยังไม่ได้ตั้งค่า CRON_SECRET — งานรายวันจะไม่ทำงาน", fix: "ตั้งค่า CRON_SECRET บน Vercel" },
